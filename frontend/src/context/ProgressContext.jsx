@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 const ProgressContext = createContext();
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = rawApiBaseUrl.replace(/\/+$/, '');
 const AUTH_TOKEN_KEY = 'students_tracker_auth_token';
 
 // eslint-disable-next-line react-refresh/only-export-components

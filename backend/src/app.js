@@ -10,15 +10,30 @@ const { requireAuth } = require("./middleware/requireAuth");
 
 const app = express();
 
+const normalizeOrigin = (origin = "") => origin.trim().replace(/\/+$/, "");
+
 const rawOrigins = process.env.CLIENT_ORIGIN || "";
 const allowList = rawOrigins
   .split(",")
-  .map((origin) => origin.trim())
+  .map(normalizeOrigin)
   .filter(Boolean);
 
 app.use(
   cors({
-    origin: allowList.length ? allowList : true,
+    origin: (origin, callback) => {
+      // Allow non-browser requests and keep local dev open if no allow-list is configured.
+      if (!origin || !allowList.length) {
+        callback(null, true);
+        return;
+      }
+
+      if (allowList.includes(normalizeOrigin(origin))) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
