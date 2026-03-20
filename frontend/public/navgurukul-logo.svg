@@ -1,0 +1,9 @@
+<svg width="238" height="44" viewBox="0 0 238 44" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Navgurukul logo</title>
+  <desc id="desc">Stylized Navgurukul wordmark</desc>
+  <rect width="238" height="44" rx="8" fill="transparent"/>
+  <g font-family="Space Grotesk, Manrope, Arial, sans-serif" font-weight="800" font-size="30" letter-spacing="0.4">
+    <text x="8" y="31" fill="#f0358e">nav</text>
+    <text x="62" y="31" fill="#151b2f">gurukul</text>
+  </g>
+</svg>

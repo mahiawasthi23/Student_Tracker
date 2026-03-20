@@ -1,0 +1,132 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&family=Manrope:wght@400;500;700;800&display=swap");
+@import "tailwindcss";
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+  }
+}
+
+.landing-root {
+  font-family: "Space Grotesk", "Manrope", sans-serif;
+  background:
+    radial-gradient(circle at 8% 10%, #fff4df 0%, rgba(255, 244, 223, 0.45) 20%, transparent 45%),
+    radial-gradient(circle at 92% 18%, rgba(176, 231, 255, 0.55) 0%, transparent 42%),
+    linear-gradient(140deg, #f8fbff 0%, #edf7ff 45%, #eefbf4 100%);
+}
+
+.landing-shell {
+  font-family: "Space Grotesk", "Manrope", sans-serif;
+  background:
+    radial-gradient(circle at 10% 6%, rgba(214, 221, 255, 0.9) 0%, rgba(214, 221, 255, 0.35) 26%, transparent 52%),
+    radial-gradient(circle at 88% 16%, rgba(196, 234, 255, 0.6) 0%, transparent 40%),
+    linear-gradient(180deg, #edf0ff 0%, #eef2ff 55%, #edf1ff 100%);
+}
+
+.soft-card {
+  border: 1px solid #d5dcf8;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 248, 255, 0.92) 100%);
+  box-shadow: 0 22px 40px -36px rgba(44, 60, 134, 0.55);
+}
+
+.landing-grid {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(circle at center, black 35%, transparent 85%);
+}
+
+.landing-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(48px);
+  opacity: 0.38;
+  animation: floatBlob 11s ease-in-out infinite;
+}
+
+.landing-blob-a {
+  width: 320px;
+  height: 320px;
+  top: 5%;
+  left: -80px;
+  background: #67e8f9;
+}
+
+.landing-blob-b {
+  width: 360px;
+  height: 360px;
+  top: 40%;
+  right: -120px;
+  background: #fdba74;
+  animation-delay: 1.4s;
+}
+
+.landing-blob-c {
+  width: 260px;
+  height: 260px;
+  bottom: -60px;
+  left: 30%;
+  background: #86efac;
+  animation-delay: 0.8s;
+}
+
+.landing-card {
+  animation: revealUp 700ms ease both;
+  box-shadow:
+    0 30px 70px -40px rgba(14, 116, 144, 0.45),
+    0 14px 30px -20px rgba(15, 23, 42, 0.28);
+}
+
+.landing-feature {
+  transition: transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease;
+}
+
+.landing-feature:hover {
+  transform: translateY(-3px);
+  border-color: rgba(148, 163, 184, 0.55);
+  box-shadow: 0 18px 36px -26px rgba(15, 23, 42, 0.45);
+}
+
+.reveal-up {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: revealUp 650ms ease forwards;
+}
+
+.delay-1 {
+  animation-delay: 120ms;
+}
+
+.delay-2 {
+  animation-delay: 220ms;
+}
+
+.delay-3 {
+  animation-delay: 320ms;
+}
+
+@keyframes floatBlob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -18px, 0) scale(1.06);
+  }
+}
+
+@keyframes revealUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
