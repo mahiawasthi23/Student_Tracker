@@ -1,11 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useProgress } from '../context/ProgressContext';
-import { Sparkles, TrendingUp, Loader2, Key, Calendar as CalendarIcon, Target, Clock, Zap, AlertCircle } from 'lucide-react';
-import { 
-  format, parseISO, startOfMonth, endOfMonth, isWithinInterval, 
-  startOfWeek, endOfWeek, subDays, eachDayOfInterval
-} from 'date-fns';
+import { Sparkles, TrendingUp, Loader2, Key, Target, AlertCircle } from 'lucide-react';
+import { format, subDays } from 'date-fns';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { buildProgressStats } from '../utils/progressStats';
 
 export function AIReview() {
   const { goals, reflections } = useProgress();
@@ -21,97 +19,13 @@ export function AIReview() {
 
   const [gbuResult, setGbuResult] = useState(null);
 
-  // Derive stats (Same powerful logic as Dashboard)
-  const stats = useMemo(() => {
-    let totalHours = 0;
-    let activeDaysCount = 0;
-    let goalsCompleted = 0;
-    let totalGoalsCount = 0;
-    let totalReflections = 0;
-    
-    const today = new Date();
-    
-    let intervalStart, intervalEnd;
-    if (filter === 'month') {
-      intervalStart = startOfMonth(today);
-      intervalEnd = endOfMonth(today);
-    } else if (filter === 'week') {
-      intervalStart = startOfWeek(today, { weekStartsOn: 1 });
-      intervalEnd = endOfWeek(today, { weekStartsOn: 1 });
-    } else if (filter === 'custom' && customRange.start && customRange.end) {
-      intervalStart = parseISO(customRange.start);
-      intervalEnd = parseISO(customRange.end);
-    }
+  const stats = useMemo(
+    () => buildProgressStats({ goals, reflections, filter, customRange, includeReviewTexts: true }),
+    [goals, reflections, filter, customRange]
+  );
 
-    let chartData = [];
-    let reviewTexts = [];
-    const allKeys = new Set([...Object.keys(goals), ...Object.keys(reflections)]);
-    
-    if (filter === 'all') {
-      const sortedKeys = Array.from(allKeys).sort();
-      if (sortedKeys.length > 0) {
-        intervalStart = parseISO(sortedKeys[0]);
-        intervalEnd = parseISO(sortedKeys[sortedKeys.length - 1] > format(today, 'yyyy-MM-dd') ? sortedKeys[sortedKeys.length - 1] : format(today, 'yyyy-MM-dd'));
-      } else {
-        intervalStart = subDays(today, 7);
-        intervalEnd = today;
-      }
-    }
-
-    if (intervalStart && intervalEnd && intervalStart <= intervalEnd) {
-      const days = eachDayOfInterval({ start: intervalStart, end: intervalEnd });
-      
-      chartData = days.map(d => {
-        const dateKey = format(d, 'yyyy-MM-dd');
-        const dayGoalsArr = goals[dateKey] || [];
-        const dayRef = reflections[dateKey] || {};
-        
-        let dayHours = 0;
-        let dayCompletedGoals = 0;
-        
-        totalGoalsCount += dayGoalsArr.length;
-
-        if (dayRef.goals) {
-          dayRef.goals.forEach(g => {
-            dayHours += Number(g.hours || 0);
-            if (g.text?.trim() || g.hours > 0) dayCompletedGoals += 1;
-            if (g.text?.trim()) {
-               totalReflections += 1;
-               reviewTexts.push(g.text);
-            }
-          });
-        }
-        if (dayRef.extra) {
-          dayHours += Number(dayRef.extra.hours || 0);
-          if (dayRef.extra.text?.trim()) {
-            totalReflections += 1;
-            reviewTexts.push(dayRef.extra.text);
-          }
-        }
-
-        if (dayHours > 0 || dayCompletedGoals > 0) activeDaysCount += 1;
-        totalHours += dayHours;
-        goalsCompleted += dayCompletedGoals;
-
-        return {
-          dateKey,
-          name: format(d, days.length > 14 ? 'MMM d' : 'EEE, MMM d'),
-          hours: Number(dayHours.toFixed(1))
-        };
-      });
-    }
-
+  useEffect(() => {
     setGbuResult(null);
-
-    return {
-      totalHours: totalHours.toFixed(1),
-      activeDays: activeDaysCount,
-      goalsCompleted,
-      totalGoalsCount,
-      totalReflections,
-      chartData,
-      reviewTexts: reviewTexts.slice(-20) // Only send latest 20 reflections to avoid blowing up token limits
-    };
   }, [goals, reflections, filter, customRange]);
 
   const handleSaveKey = () => {
@@ -175,7 +89,7 @@ export function AIReview() {
       let parsedGbu;
       try {
         parsedGbu = JSON.parse(cleanedText);
-      } catch (parseErr) {
+      } catch {
         console.error("JSON Parse Error. Raw Text:", cleanedText);
         // Fallback: Make a best-effort structural parse if it's broken or cut-off
         parsedGbu = {
@@ -247,23 +161,6 @@ export function AIReview() {
             </div>
           )}
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Hours Logged", val: stats.totalHours, icon: Clock, c: "text-blue-600", bg: "bg-blue-50" },
-          { label: "Active Days", val: stats.activeDays, icon: CalendarIcon, c: "text-emerald-600", bg: "bg-emerald-50" },
-          { label: "Goals Done", val: `${stats.goalsCompleted}/${stats.totalGoalsCount}`, icon: Target, c: "text-purple-600", bg: "bg-purple-50" },
-          { label: "Reflections", val: stats.totalReflections, icon: Zap, c: "text-amber-600", bg: "bg-amber-50" },
-        ].map((s, i) => (
-          <div key={i} className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col items-center text-center shadow-sm">
-            <div className={`p-3 rounded-xl ${s.bg} ${s.c} mb-3`}>
-              <s.icon size={20} />
-            </div>
-            <p className="text-xl font-bold text-slate-800">{s.val}</p>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mt-1">{s.label}</p>
-          </div>
-        ))}
       </div>
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden shadow-indigo-100/50">

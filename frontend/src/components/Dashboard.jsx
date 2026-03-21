@@ -1,20 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useProgress } from '../context/ProgressContext';
-import { Sparkles, Clock, CheckCircle2, CalendarDays, ArrowRight, Flame } from 'lucide-react';
-import { 
-  format, parseISO, startOfMonth, endOfMonth, isWithinInterval, 
-  startOfWeek, endOfWeek, subDays, eachDayOfInterval
-} from 'date-fns';
+import { Sparkles, Clock, CheckCircle2, CalendarDays, ArrowRight, Flame, MessageSquare } from 'lucide-react';
+import { format, subDays } from 'date-fns';
+import { buildProgressStats, buildSubmissionHeatmap } from '../utils/progressStats';
 
-const StatsCard = ({ title, value, icon: Icon, colorClass }) => (
-  <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-    <div className={`p-4 rounded-xl ${colorClass}`}>
-      <Icon size={24} />
+const StatsCard = ({ title, value, icon, colorClass }) => (
+  <div className="group bg-white/90 backdrop-blur p-5 sm:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:shadow-slate-200/60 hover:-translate-y-1 transition-all duration-300 flex items-center gap-4">
+    <div className={`p-3.5 sm:p-4 rounded-xl ${colorClass} transition-transform duration-300 group-hover:scale-105`}>
+      {React.createElement(icon, { size: 22 })}
     </div>
-    <div>
+    <div className="min-w-0">
       <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
-      <p className="text-2xl font-bold text-slate-800">{value}</p>
+      <p className="text-xl sm:text-2xl font-bold text-slate-800 truncate">{value}</p>
     </div>
   </div>
 );
@@ -22,90 +20,40 @@ const StatsCard = ({ title, value, icon: Icon, colorClass }) => (
 export function Dashboard({ setView }) {
   const { goals, reflections, streak } = useProgress();
   const [filter, setFilter] = useState('month'); 
+  const [heatmapRange, setHeatmapRange] = useState('6');
   const [customRange, setCustomRange] = useState({ 
     start: format(subDays(new Date(), 7), 'yyyy-MM-dd'), 
     end: format(new Date(), 'yyyy-MM-dd') 
   });
 
-  // Derive stats
-  const stats = useMemo(() => {
-    let totalHours = 0;
-    let activeDaysCount = 0;
-    let goalsCompleted = 0;
-    let totalGoalsCount = 0;
-    
-    const today = new Date();
-    
-    let intervalStart, intervalEnd;
-    if (filter === 'month') {
-      intervalStart = startOfMonth(today);
-      intervalEnd = endOfMonth(today);
-    } else if (filter === 'week') {
-      intervalStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday start
-      intervalEnd = endOfWeek(today, { weekStartsOn: 1 });
-    } else if (filter === 'custom' && customRange.start && customRange.end) {
-      intervalStart = parseISO(customRange.start);
-      intervalEnd = parseISO(customRange.end);
-    }
+  const stats = useMemo(
+    () => buildProgressStats({ goals, reflections, filter, customRange }),
+    [goals, reflections, filter, customRange]
+  );
 
-    let chartData = [];
-    const allKeys = new Set([...Object.keys(goals), ...Object.keys(reflections)]);
-    
-    // Build days array
-    if (filter === 'all') {
-      const sortedKeys = Array.from(allKeys).sort();
-      if (sortedKeys.length > 0) {
-        intervalStart = parseISO(sortedKeys[0]);
-        intervalEnd = parseISO(sortedKeys[sortedKeys.length - 1] > format(today, 'yyyy-MM-dd') ? sortedKeys[sortedKeys.length - 1] : format(today, 'yyyy-MM-dd'));
-      } else {
-        intervalStart = subDays(today, 7);
-        intervalEnd = today;
+  const heatmap = useMemo(
+    () => buildSubmissionHeatmap({ goals, reflections, months: Number(heatmapRange) }),
+    [goals, reflections, heatmapRange]
+  );
+
+  const monthLabelByWeek = useMemo(() => {
+    const labels = Array.from({ length: heatmap.weeks.length }, () => '');
+    heatmap.monthLabels.forEach((month) => {
+      if (month.weekIndex >= 0 && month.weekIndex < labels.length) {
+        labels[month.weekIndex] = month.label;
       }
-    }
+    });
+    return labels;
+  }, [heatmap.monthLabels, heatmap.weeks.length]);
 
-    if (intervalStart && intervalEnd && intervalStart <= intervalEnd) {
-      const days = eachDayOfInterval({ start: intervalStart, end: intervalEnd });
-      
-      chartData = days.map(d => {
-        const dateKey = format(d, 'yyyy-MM-dd');
-        const dayGoalsArr = goals[dateKey] || [];
-        const dayRef = reflections[dateKey] || {};
-        
-        let dayHours = 0;
-        let dayCompletedGoals = 0;
-        
-        totalGoalsCount += dayGoalsArr.length;
-
-        if (dayRef.goals) {
-          dayRef.goals.forEach(g => {
-            dayHours += Number(g.hours || 0);
-            if (g.text?.trim() || g.hours > 0) dayCompletedGoals += 1;
-          });
-        }
-        if (dayRef.extra) {
-          dayHours += Number(dayRef.extra.hours || 0);
-        }
-
-        if (dayHours > 0 || dayCompletedGoals > 0) activeDaysCount += 1;
-        totalHours += dayHours;
-        goalsCompleted += dayCompletedGoals;
-
-        return {
-          dateKey,
-          name: format(d, days.length > 14 ? 'MMM d' : 'EEE, MMM d'),
-          hours: Number(dayHours.toFixed(1))
-        };
-      });
-    }
-
-    return {
-      totalHours: totalHours.toFixed(1),
-      activeDays: activeDaysCount,
-      goalsCompleted,
-      totalGoalsCount,
-      chartData: chartData
-    };
-  }, [goals, reflections, filter, customRange]);
+  const getHeatColor = (submissions, inRange) => {
+    if (!inRange) return 'bg-slate-100';
+    if (submissions <= 0) return 'bg-slate-200';
+    if (submissions === 1) return 'bg-emerald-200';
+    if (submissions <= 3) return 'bg-emerald-400';
+    if (submissions <= 5) return 'bg-emerald-600';
+    return 'bg-emerald-800';
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in pb-12">
@@ -150,7 +98,7 @@ export function Dashboard({ setView }) {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-4 sm:gap-6">
         <StatsCard 
           title="Total Hours" 
           value={`${stats.totalHours}h`} 
@@ -174,6 +122,12 @@ export function Dashboard({ setView }) {
           value={`${stats.goalsCompleted}/${stats.totalGoalsCount}`} 
           icon={CheckCircle2} 
           colorClass="bg-purple-50 text-purple-600" 
+        />
+        <StatsCard 
+          title="Reflections" 
+          value={stats.totalReflections} 
+          icon={MessageSquare} 
+          colorClass="bg-amber-50 text-amber-600" 
         />
       </div>
 
@@ -240,6 +194,77 @@ export function Dashboard({ setView }) {
               <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
             </button>
           </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+          <div>
+            <h3 className="font-bold text-slate-800 text-lg">Submissions Heat Map</h3>
+            <p className="text-slate-500 text-sm mt-1">
+              {heatmap.totalSubmissions} tasks logged across {heatmap.totalDaysWithSubmissions} active days.
+            </p>
+          </div>
+          <select
+            value={heatmapRange}
+            onChange={(event) => setHeatmapRange(event.target.value)}
+            className="bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl focus:ring-2 focus:ring-indigo-500 block p-2.5 shadow-sm"
+          >
+            <option value="3">Last 3 Months</option>
+            <option value="6">Last 6 Months</option>
+            <option value="12">Last 12 Months</option>
+          </select>
+        </div>
+
+        <div className="overflow-x-auto pb-2">
+          <div className="min-w-[560px] sm:min-w-[700px]">
+            <div className="ml-10 sm:ml-12 mb-2 h-5 grid grid-flow-col auto-cols-[13px] sm:auto-cols-[16px] gap-[3px] sm:gap-1">
+              {monthLabelByWeek.map((label, index) => (
+                <span
+                  key={`month-col-${index}`}
+                  className="text-[11px] sm:text-xs text-slate-500 whitespace-nowrap"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+
+            <div className="flex gap-2 sm:gap-3">
+              <div className="w-8 sm:w-9 pt-[1px] text-[11px] sm:text-xs text-slate-500">
+                <div className="h-[15px] sm:h-4 mb-1 opacity-0">Sun</div>
+                <div className="h-[15px] sm:h-4 mb-1">Mon</div>
+                <div className="h-[15px] sm:h-4 mb-1 opacity-0">Tue</div>
+                <div className="h-[15px] sm:h-4 mb-1">Wed</div>
+                <div className="h-[15px] sm:h-4 mb-1 opacity-0">Thu</div>
+                <div className="h-[15px] sm:h-4 mb-1">Fri</div>
+                <div className="h-[15px] sm:h-4 opacity-0">Sat</div>
+              </div>
+
+              <div className="flex gap-[3px] sm:gap-1">
+                {heatmap.weeks.map((week, weekIndex) => (
+                  <div key={`week-${weekIndex}`} className="flex flex-col gap-[3px] sm:gap-1">
+                    {week.map((day) => (
+                      <div
+                        key={day.dateKey}
+                        className={`w-[13px] h-[13px] sm:w-4 sm:h-4 rounded-[3px] sm:rounded-[4px] transition-transform duration-150 hover:scale-110 ${getHeatColor(day.submissions, day.inRange)}`}
+                        title={`${format(day.date, 'EEE, MMM d, yyyy')} • ${day.submissions} submissions`}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-end gap-2 text-xs text-slate-500">
+          <span>Less</span>
+          <span className="w-3.5 h-3.5 rounded-[3px] bg-slate-200" />
+          <span className="w-3.5 h-3.5 rounded-[3px] bg-emerald-200" />
+          <span className="w-3.5 h-3.5 rounded-[3px] bg-emerald-400" />
+          <span className="w-3.5 h-3.5 rounded-[3px] bg-emerald-600" />
+          <span className="w-3.5 h-3.5 rounded-[3px] bg-emerald-800" />
+          <span>More</span>
         </div>
       </div>
 
