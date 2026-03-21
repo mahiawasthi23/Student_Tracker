@@ -53,7 +53,7 @@ function App() {
     <>
       <Layout view={view} setView={setView} userName={user?.name || 'Student'}>
         {view === 'calendar' ? (
-          <div className="h-full flex flex-col relative">
+          <div className="relative">
             <Calendar onDateSelect={handleDateSelect} />
             {selectedDate && (
               <DateModal 

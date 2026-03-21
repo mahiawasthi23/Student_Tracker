@@ -108,7 +108,7 @@ export function Dashboard({ setView }) {
   }, [goals, reflections, filter, customRange]);
 
   return (
-    <div className="space-y-6 animate-in fade-in">
+    <div className="space-y-6 animate-in fade-in pb-12">
       
       {/* Header & Filters */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -189,8 +189,15 @@ export function Dashboard({ setView }) {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#64748b', fontWeight: 500 }} dy={15} />
+                <BarChart data={stats.chartData} margin={{ top: 0, right: 0, left: -20, bottom: 20 }}>
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 13, fill: '#64748b', fontWeight: 500 }}
+                    tickMargin={10}
+                    height={44}
+                  />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#64748b', fontWeight: 500 }} />
                   <Tooltip 
                     formatter={(value) => [`${value} hrs`, 'Logged Time']}
