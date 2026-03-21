@@ -21,10 +21,14 @@ export function DayCell({ day, currentMonth, dateKey, dayGoals = [], dayReflecti
   const totalHours = Number(hoursFromGoals + Number(dayReflection?.extra?.hours || 0));
   const hasGoals = dayGoals.length > 0;
   const hasActivity = hasGoals || hasReflection || totalHours > 0;
+  const cellTitle = isClickable
+    ? `Click to add or update tasks for ${dateKey}`
+    : `Past date locked. Open recent days or days with existing data.`;
 
   return (
     <div
       onClick={() => isClickable && onClick(day, dateKey)}
+      title={cellTitle}
       className={`relative min-h-[94px] sm:min-h-[112px] lg:min-h-[124px] h-full rounded-xl border p-2 sm:p-2.5 flex flex-col transition-all duration-200 group
         ${!isCurrentMonth ? 'bg-slate-50 opacity-65 border-slate-100' : 'bg-white hover:shadow-md hover:-translate-y-0.5'}
         ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md' : 'border-slate-200'}

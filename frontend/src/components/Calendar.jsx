@@ -3,14 +3,16 @@ import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, 
   addMonths, subMonths, format, isSameMonth, differenceInDays
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkles, X } from 'lucide-react';
 import { DayCell } from './DayCell';
 import { useProgress } from '../context/ProgressContext';
 import { formatDateKey } from '../utils/dateUtils';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 export function Calendar({ onDateSelect }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDateKey, setSelectedDateKey] = useState(formatDateKey(new Date()));
+  const [hideCalendarHint, setHideCalendarHint] = useLocalStorage('calendar_click_hint_dismissed', false);
   const { goals, reflections } = useProgress();
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
@@ -80,6 +82,25 @@ export function Calendar({ onDateSelect }) {
           </div>
         </div>
       </div>
+
+      {!hideCalendarHint && (
+        <div className="mx-3 sm:mx-4 mt-3 mb-1 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-sky-50 px-3 py-2.5 flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2.5 text-slate-700">
+            <span className="mt-0.5 text-indigo-600"><Sparkles size={15} /></span>
+            <p className="text-xs sm:text-sm">
+              New here? Click any day box to add tasks, reflections, and your end-of-day summary.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setHideCalendarHint(true)}
+            className="shrink-0 text-slate-500 hover:text-slate-700 transition-colors"
+            aria-label="Dismiss calendar hint"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
 
       {/* Grid Header */}
       <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/70">
