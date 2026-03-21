@@ -114,21 +114,18 @@ export function buildProgressStats({
   };
 }
 
-function getDailySubmissionCount(dayGoals = [], dayRef = {}) {
-  const plannedGoalsCount = Array.isArray(dayGoals)
-    ? dayGoals.filter((goal) => String(goal?.text || '').trim()).length
-    : 0;
-
+function getDailySubmissionCount(dayRef = {}) {
   const reflectedGoalsCount = Array.isArray(dayRef.goals)
     ? dayRef.goals.filter((goal) => String(goal?.text || '').trim() || Number(goal?.hours || 0) > 0).length
     : 0;
 
-  const hasExtraReflection = Boolean(
+  const hasEndOfDaySummary = Boolean(
     String(dayRef?.extra?.text || '').trim() || Number(dayRef?.extra?.hours || 0) > 0
   );
 
-  const completedCount = reflectedGoalsCount + (hasExtraReflection ? 1 : 0);
-  return completedCount > 0 ? completedCount : plannedGoalsCount;
+  // Count actual reflection work: reflected goals + end-of-day summary.
+  // Challenge notes are intentionally excluded.
+  return reflectedGoalsCount + (hasEndOfDaySummary ? 1 : 0);
 }
 
 export function buildSubmissionHeatmap({ goals = {}, reflections = {}, months = 6 }) {
@@ -140,7 +137,7 @@ export function buildSubmissionHeatmap({ goals = {}, reflections = {}, months = 
   const allDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   const dayCells = allDays.map((day) => {
     const dateKey = format(day, 'yyyy-MM-dd');
-    const submissions = getDailySubmissionCount(goals[dateKey], reflections[dateKey]);
+    const submissions = getDailySubmissionCount(reflections[dateKey]);
     const isInRange = day >= rangeStart && day <= today;
 
     return {

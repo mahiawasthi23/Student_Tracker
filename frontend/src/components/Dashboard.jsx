@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useProgress } from '../context/ProgressContext';
-import { Sparkles, Clock, CheckCircle2, CalendarDays, ArrowRight, Flame, MessageSquare } from 'lucide-react';
-import { format, subDays } from 'date-fns';
+import { Sparkles, Clock, CheckCircle2, CalendarDays, ArrowRight, Flame, MessageSquare, Bell, CircleAlert, X } from 'lucide-react';
+import { format, isAfter, set, startOfWeek, subDays } from 'date-fns';
 import { buildProgressStats, buildSubmissionHeatmap } from '../utils/progressStats';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const StatsCard = ({ title, value, icon, colorClass }) => (
   <div className="group bg-white/90 backdrop-blur p-5 sm:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:shadow-slate-200/60 hover:-translate-y-1 transition-all duration-300 flex items-center gap-4">
@@ -17,14 +18,74 @@ const StatsCard = ({ title, value, icon, colorClass }) => (
   </div>
 );
 
+const AlertCard = ({ unreadCount, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="group relative w-full text-left bg-white/90 backdrop-blur p-5 sm:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:shadow-slate-200/60 hover:-translate-y-1 transition-all duration-300 flex items-center gap-4"
+  >
+    <div className="p-3.5 sm:p-4 rounded-xl bg-rose-50 text-rose-600 transition-transform duration-300 group-hover:scale-105 relative">
+      <Bell size={22} />
+      {unreadCount > 0 && (
+        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+      )}
+    </div>
+    <div className="min-w-0">
+      <p className="text-sm font-medium text-slate-500 mb-1">Alerts</p>
+      <p className="text-xl sm:text-2xl font-bold text-slate-800 truncate">{unreadCount}</p>
+    </div>
+    {unreadCount > 0 && (
+      <span className="absolute top-3 right-3 min-w-6 h-6 rounded-full bg-rose-600 text-white text-xs font-bold px-1.5 grid place-items-center shadow animate-pulse">
+        {unreadCount}
+      </span>
+    )}
+  </button>
+);
+
+const AlertToast = ({ alert, onOpen, onClose }) => {
+  if (!alert) return null;
+
+  return (
+    <div className="fixed top-5 right-4 z-[60] w-[min(92vw,360px)] animate-in slide-in-from-right-8 fade-in duration-300">
+      <div className="rounded-2xl border border-rose-200 bg-white shadow-2xl shadow-rose-100 overflow-hidden">
+        <div className="px-4 py-3 bg-rose-50 border-b border-rose-100 flex items-center justify-between">
+          <p className="text-sm font-bold text-rose-700 flex items-center gap-2">
+            <Bell size={14} /> New Alert
+          </p>
+          <button onClick={onClose} className="text-rose-500 hover:text-rose-700">
+            <X size={14} />
+          </button>
+        </div>
+        <button onClick={onOpen} className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors">
+          <p className="text-sm font-semibold text-slate-800">{alert.title}</p>
+          <p className="text-xs text-slate-600 mt-1 leading-relaxed">{alert.message}</p>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export function Dashboard({ setView }) {
   const { goals, reflections, streak } = useProgress();
   const [filter, setFilter] = useState('month'); 
   const [heatmapRange, setHeatmapRange] = useState('6');
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [seenAlertIds, setSeenAlertIds] = useLocalStorage('dashboard_seen_alert_ids', []);
+  const [dismissedAlertIds, setDismissedAlertIds] = useLocalStorage('dashboard_dismissed_alert_ids', []);
+  const [aiAlertMessages, setAiAlertMessages] = useState({});
+  const [toastAlert, setToastAlert] = useState(null);
+  const [now, setNow] = useState(new Date());
+  const prevUnreadCountRef = useRef(0);
+  const aiRequestSignatureRef = useRef('');
   const [customRange, setCustomRange] = useState({ 
     start: format(subDays(new Date(), 7), 'yyyy-MM-dd'), 
     end: format(new Date(), 'yyyy-MM-dd') 
   });
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const stats = useMemo(
     () => buildProgressStats({ goals, reflections, filter, customRange }),
@@ -55,8 +116,180 @@ export function Dashboard({ setView }) {
     return 'bg-emerald-800';
   };
 
+  const alerts = useMemo(() => {
+    const alertItems = [];
+    const todayKey = format(now, 'yyyy-MM-dd');
+    const todayGoals = goals[todayKey] || [];
+    const todayReflection = reflections[todayKey] || {};
+
+    const reflectedGoalIds = new Set(
+      (todayReflection.goals || [])
+        .filter((goal) => String(goal?.text || '').trim() || Number(goal?.hours || 0) > 0)
+        .map((goal) => String(goal.goalId))
+    );
+    const pendingReflections = todayGoals.filter((goal) => !reflectedGoalIds.has(String(goal.id))).length;
+
+    const at830pm = set(now, { hours: 20, minutes: 30, seconds: 0, milliseconds: 0 });
+    if (isAfter(now, at830pm) && todayGoals.length > 0 && pendingReflections > 0) {
+      alertItems.push({
+        id: `missing-reflection-${todayKey}`,
+        severity: 'high',
+        title: 'Reflection Pending',
+        baseMessage: `${pendingReflections} tasks still need reflection. Fill them before your day ends.`,
+        aiPrompt: `Write one short alert for a student with ${pendingReflections} pending reflections after 8:30 PM. Keep it strict but supportive.`,
+      });
+    }
+
+    const at10am = set(now, { hours: 10, minutes: 0, seconds: 0, milliseconds: 0 });
+    if (isAfter(now, at10am) && todayGoals.length === 0) {
+      alertItems.push({
+        id: `no-goal-set-${todayKey}`,
+        severity: 'medium',
+        title: 'No Goal Set Today',
+        baseMessage: 'It is 10:00 AM and no goal is set for today. Set at least one focused task now.',
+        aiPrompt: 'Write one short motivational alert for a student who has set no goals by 10 AM.',
+      });
+    }
+
+    const recentDays = Array.from({ length: 7 }, (_, i) => format(subDays(now, i), 'yyyy-MM-dd'));
+    let recentGoals = 0;
+    let recentReflections = 0;
+    recentDays.forEach((dateKey) => {
+      const dayGoals = goals[dateKey] || [];
+      recentGoals += dayGoals.length;
+      const dayRef = reflections[dateKey] || {};
+      recentReflections += (dayRef.goals || []).filter(
+        (goal) => String(goal?.text || '').trim() || Number(goal?.hours || 0) > 0
+      ).length;
+    });
+
+    const completionRate = recentGoals > 0 ? recentReflections / recentGoals : 1;
+    const activeRate = stats.activeDays / Math.max(1, stats.chartData.length);
+    const weeklyKey = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+
+    if ((recentGoals >= 6 && completionRate < 0.4) || (stats.chartData.length >= 5 && activeRate < 0.35)) {
+      alertItems.push({
+        id: `performance-drop-${weeklyKey}`,
+        severity: 'medium',
+        title: 'Performance Drop Alert',
+        baseMessage: 'Your recent consistency has dropped. Start with 1-2 focused tasks today and close with reflection.',
+        aiPrompt: `Write one short performance alert for a student with completion rate ${(completionRate * 100).toFixed(0)}% and low active-day consistency.`,
+      });
+    }
+
+    return alertItems.filter((alert) => !dismissedAlertIds.includes(alert.id));
+  }, [now, goals, reflections, stats.activeDays, stats.chartData.length, dismissedAlertIds]);
+
+  const unreadAlerts = useMemo(
+    () => alerts.filter((alert) => !seenAlertIds.includes(alert.id)),
+    [alerts, seenAlertIds]
+  );
+
+  const markAlertsSeen = () => {
+    const ids = alerts.map((alert) => alert.id);
+    setSeenAlertIds((prev) => Array.from(new Set([...(Array.isArray(prev) ? prev : []), ...ids])));
+  };
+
+  useEffect(() => {
+    if (isAlertOpen && alerts.length > 0) {
+      markAlertsSeen();
+    }
+  }, [isAlertOpen, alerts]);
+
+  useEffect(() => {
+    const unreadCount = unreadAlerts.length;
+    if (unreadCount > prevUnreadCountRef.current && unreadCount > 0) {
+      const firstUnread = unreadAlerts.find((alert) => !seenAlertIds.includes(alert.id));
+      if (firstUnread) {
+        setToastAlert({
+          id: firstUnread.id,
+          title: firstUnread.title,
+          message: aiAlertMessages[firstUnread.id] || firstUnread.baseMessage,
+        });
+      }
+
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRlQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YTAAAAAAABERAQG5uQAAQkIAAQEBAe3tAAABAQEDAwMAbW0AAQEBAb6+AAABAQEA');
+        audio.volume = 0.25;
+        audio.play().catch(() => {});
+      } catch {
+        // Ignore audio playback failures (autoplay/device restrictions).
+      }
+
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        navigator.vibrate([70, 40, 70]);
+      }
+    }
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadAlerts, seenAlertIds, aiAlertMessages]);
+
+  useEffect(() => {
+    if (!toastAlert) return;
+    const timer = setTimeout(() => setToastAlert(null), 4500);
+    return () => clearTimeout(timer);
+  }, [toastAlert]);
+
+  useEffect(() => {
+    const keyRaw = window.localStorage.getItem('gemini_api_key');
+    let geminiKey = '';
+    try {
+      geminiKey = keyRaw ? JSON.parse(keyRaw) : '';
+    } catch {
+      geminiKey = '';
+    }
+
+    const pending = alerts.filter((alert) => !aiAlertMessages[alert.id]);
+    if (!geminiKey || pending.length === 0) return;
+
+    const signature = pending.map((item) => item.id).join('|');
+    if (signature === aiRequestSignatureRef.current) return;
+    aiRequestSignatureRef.current = signature;
+
+    const generate = async () => {
+      try {
+        const prompt = `Create short notification messages in JSON for these alert ids.\n${JSON.stringify(
+          pending.map((item) => ({ id: item.id, title: item.title, condition: item.aiPrompt }))
+        )}\nRules: response must be JSON object where key is id and value is one short message under 140 chars.`;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.6, maxOutputTokens: 500 },
+          }),
+        });
+
+        if (!response.ok) return;
+        const data = await response.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const cleanedText = rawText.replace(/^```json/g, '').replace(/^```/g, '').replace(/```$/g, '').trim();
+        const parsed = JSON.parse(cleanedText);
+
+        setAiAlertMessages((prev) => ({ ...prev, ...parsed }));
+      } catch {
+        // Keep fallback base messages if AI generation fails.
+      }
+    };
+
+    generate();
+  }, [alerts, aiAlertMessages]);
+
+  const dismissAlert = (id) => {
+    setDismissedAlertIds((prev) => Array.from(new Set([...(Array.isArray(prev) ? prev : []), id])));
+    setSeenAlertIds((prev) => Array.from(new Set([...(Array.isArray(prev) ? prev : []), id])));
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in pb-12">
+      <AlertToast
+        alert={toastAlert}
+        onClose={() => setToastAlert(null)}
+        onOpen={() => {
+          setIsAlertOpen(true);
+          setToastAlert(null);
+        }}
+      />
       
       {/* Header & Filters */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -129,7 +362,63 @@ export function Dashboard({ setView }) {
           icon={MessageSquare} 
           colorClass="bg-amber-50 text-amber-600" 
         />
+        <AlertCard unreadCount={unreadAlerts.length} onClick={() => setIsAlertOpen((prev) => !prev)} />
       </div>
+
+      {isAlertOpen && (
+        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+              <Bell size={18} className="text-rose-600" /> Alert Center
+            </h3>
+            <button
+              type="button"
+              onClick={() => setIsAlertOpen(false)}
+              className="p-2 rounded-full hover:bg-slate-100 text-slate-500"
+              aria-label="Close alerts"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {alerts.length === 0 ? (
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-700">
+              No active alerts right now. Keep going.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {alerts.map((alert) => {
+                const isUnread = !seenAlertIds.includes(alert.id);
+                const severityClasses =
+                  alert.severity === 'high'
+                    ? 'border-rose-200 bg-rose-50/70 text-rose-800'
+                    : 'border-amber-200 bg-amber-50/70 text-amber-800';
+
+                return (
+                  <div key={alert.id} className={`rounded-xl border px-4 py-3 ${severityClasses}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold flex items-center gap-1.5">
+                          <CircleAlert size={14} /> {alert.title}
+                          {isUnread && <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-rose-600 text-white">NEW</span>}
+                        </p>
+                        <p className="text-sm mt-1 leading-relaxed">{aiAlertMessages[alert.id] || alert.baseMessage}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => dismissAlert(alert.id)}
+                        className="text-xs font-semibold px-2 py-1 rounded-md border border-current/25 hover:bg-white/50"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart */}
