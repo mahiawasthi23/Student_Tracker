@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useProgress } from '../context/ProgressContext';
-import { Sparkles, Clock, CheckCircle2, CalendarDays, ArrowRight } from 'lucide-react';
+import { Sparkles, Clock, CheckCircle2, CalendarDays, ArrowRight, Flame } from 'lucide-react';
 import { 
   format, parseISO, startOfMonth, endOfMonth, isWithinInterval, 
   startOfWeek, endOfWeek, subDays, eachDayOfInterval
@@ -20,7 +20,7 @@ const StatsCard = ({ title, value, icon: Icon, colorClass }) => (
 );
 
 export function Dashboard({ setView }) {
-  const { goals, reflections } = useProgress();
+  const { goals, reflections, streak } = useProgress();
   const [filter, setFilter] = useState('month'); 
   const [customRange, setCustomRange] = useState({ 
     start: format(subDays(new Date(), 7), 'yyyy-MM-dd'), 
@@ -150,12 +150,18 @@ export function Dashboard({ setView }) {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatsCard 
           title="Total Hours" 
           value={`${stats.totalHours}h`} 
           icon={Clock} 
           colorClass="bg-blue-50 text-blue-600" 
+        />
+        <StatsCard 
+          title="Current Streak" 
+          value={`${streak?.currentStreak || 0} days`} 
+          icon={Flame} 
+          colorClass="bg-orange-50 text-orange-600" 
         />
         <StatsCard 
           title="Active Days" 

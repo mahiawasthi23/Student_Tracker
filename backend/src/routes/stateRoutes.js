@@ -2,6 +2,7 @@ const express = require("express");
 
 const ProgressDay = require("../models/ProgressDay");
 const { toFrontendState } = require("../utils/stateMapper");
+const { buildStreakStats } = require("../utils/streak");
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ router.get("/", async (req, res) => {
   const days = await ProgressDay.find({ user: userId }).sort({ dateKey: 1 }).lean();
 
   const { goals, reflections } = toFrontendState(days);
+  const streak = buildStreakStats(days);
 
   res.json({
     user: {
@@ -18,6 +20,7 @@ router.get("/", async (req, res) => {
     },
     goals,
     reflections,
+    streak,
   });
 });
 
@@ -70,12 +73,14 @@ router.put("/", async (req, res) => {
 
   const days = await ProgressDay.find({ user: userId }).sort({ dateKey: 1 }).lean();
   const nextState = toFrontendState(days);
+  const streak = buildStreakStats(days);
 
   return res.json({
     user: {
       name: req.auth.user.name,
       email: req.auth.user.email,
     },
+    streak,
     ...nextState,
   });
 });

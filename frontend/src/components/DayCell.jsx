@@ -1,7 +1,7 @@
 import React from 'react';
 import { isSameMonth, isToday } from 'date-fns';
 
-export function DayCell({ day, currentMonth, dateKey, dayGoals = [], dayReflection = {}, isSelected = false, onClick }) {
+export function DayCell({ day, currentMonth, dateKey, dayGoals = [], dayReflection = {}, isSelected = false, onClick, isClickable = true }) {
   const isCurrentMonth = isSameMonth(day, currentMonth);
   const isCurrentDay = isToday(day);
 
@@ -24,11 +24,12 @@ export function DayCell({ day, currentMonth, dateKey, dayGoals = [], dayReflecti
 
   return (
     <div
-      onClick={() => onClick(day, dateKey)}
-      className={`relative min-h-[94px] sm:min-h-[112px] lg:min-h-[124px] h-full rounded-xl border p-2 sm:p-2.5 flex flex-col cursor-pointer transition-all duration-200 group
+      onClick={() => isClickable && onClick(day, dateKey)}
+      className={`relative min-h-[94px] sm:min-h-[112px] lg:min-h-[124px] h-full rounded-xl border p-2 sm:p-2.5 flex flex-col transition-all duration-200 group
         ${!isCurrentMonth ? 'bg-slate-50 opacity-65 border-slate-100' : 'bg-white hover:shadow-md hover:-translate-y-0.5'}
         ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-md' : 'border-slate-200'}
         ${hasActivity && !isSelected && isCurrentMonth ? 'border-emerald-200 bg-emerald-50/30' : ''}
+        ${isClickable ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}
       `}
     >
       <div className="flex justify-between items-start mb-1">

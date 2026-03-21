@@ -12,6 +12,7 @@ export const ProgressProvider = ({ children }) => {
   const [user, setUser] = useState({ name: '' });
   const [goals, setGoals] = useState({}); // { "YYYY-MM-DD": [{ id, text }] }
   const [reflections, setReflections] = useState({}); // { "YYYY-MM-DD": { goals: [{ goalId, text, hours }], extra: { text, hours } } }
+  const [streak, setStreak] = useState({ currentStreak: 0, longestStreak: 0 });
   const [token, setToken] = useState(() => localStorage.getItem(AUTH_TOKEN_KEY) || '');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
@@ -48,6 +49,7 @@ export const ProgressProvider = ({ children }) => {
     setUser(data.user || { name: '' });
     setGoals(data.goals || {});
     setReflections(data.reflections || {});
+    setStreak(data.streak || { currentStreak: 0, longestStreak: 0 });
     didHydrateFromServer.current = true;
   };
 
@@ -131,6 +133,7 @@ export const ProgressProvider = ({ children }) => {
     setUser({ name: '' });
     setGoals({});
     setReflections({});
+    setStreak({ currentStreak: 0, longestStreak: 0 });
     didHydrateFromServer.current = false;
   };
 
@@ -168,6 +171,7 @@ export const ProgressProvider = ({ children }) => {
         setUser({ name: '' });
         setGoals({});
         setReflections({});
+        setStreak({ currentStreak: 0, longestStreak: 0 });
         didHydrateFromServer.current = false;
       } finally {
         setAuthLoading(false);
@@ -185,7 +189,7 @@ export const ProgressProvider = ({ children }) => {
 
     const timer = setTimeout(async () => {
       try {
-        await fetch(`${API_BASE_URL}/api/state`, {
+        const response = await fetch(`${API_BASE_URL}/api/state`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -193,6 +197,11 @@ export const ProgressProvider = ({ children }) => {
           },
           body: JSON.stringify({ user, goals, reflections }),
         });
+
+        if (response.ok) {
+          const data = await response.json();
+          setStreak(data.streak || { currentStreak: 0, longestStreak: 0 });
+        }
       } catch (error) {
         console.error(error);
       }
@@ -249,7 +258,8 @@ export const ProgressProvider = ({ children }) => {
       logout,
       user, setUser,
       goals, addGoal, updateGoal, deleteGoal,
-      reflections, updateReflection
+      reflections, updateReflection,
+      streak
     }}>
       {children}
     </ProgressContext.Provider>

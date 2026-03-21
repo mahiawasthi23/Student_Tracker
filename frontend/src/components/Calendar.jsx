@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, 
-  addMonths, subMonths, format, isSameMonth
+  addMonths, subMonths, format, isSameMonth, differenceInDays
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { DayCell } from './DayCell';
@@ -96,6 +96,11 @@ export function Calendar({ onDateSelect }) {
           const dateKey = formatDateKey(day);
           const dayGoals = goals[dateKey] || [];
           const dayReflection = reflections[dateKey] || {};
+          
+          const today = new Date();
+          const daysAgo = differenceInDays(today, day);
+          const hasData = dayGoals.length > 0 || Object.keys(dayReflection).length > 0;
+          const isClickable = daysAgo <= 3 || (daysAgo > 3 && hasData);
 
           return (
             <DayCell 
@@ -107,6 +112,7 @@ export function Calendar({ onDateSelect }) {
               dayReflection={dayReflection}
               isSelected={selectedDateKey === dateKey}
               onClick={handleSelectDate}
+              isClickable={isClickable}
             />
           );
         })}
