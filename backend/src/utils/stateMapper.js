@@ -14,6 +14,7 @@ function toFrontendState(days) {
         text: goal.text || "",
         hours: Number(goal.hours || 0),
       })),
+      challenge: day.reflection?.challenge || "",
       extra: {
         text: day.reflection?.extra?.text || "",
         hours: Number(day.reflection?.extra?.hours || 0),

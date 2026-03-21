@@ -59,6 +59,7 @@ router.put("/", async (req, res) => {
               text: String(goal.text || ""),
               hours: Number(goal.hours || 0),
             })),
+            challenge: String(dayReflection.challenge || ""),
             extra: {
               text: String(reflectionExtra.text || ""),
               hours: Number(reflectionExtra.hours || 0),

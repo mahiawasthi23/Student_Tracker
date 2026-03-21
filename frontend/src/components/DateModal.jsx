@@ -165,7 +165,7 @@ export function DateModal({ date, dateKey, onClose }) {
   const [newGoalText, setNewGoalText] = useState('');
   
   const dayGoals = goals[dateKey] || [];
-  const dayReflection = reflections[dateKey] || { goals: [], extra: { text: '', hours: 0 } };
+  const dayReflection = reflections[dateKey] || { goals: [], challenge: '', extra: { text: '', hours: 0 } };
   const isSubmitted = dayReflection.submitted || false;
 
   const handleAdd = (e) => {
@@ -262,6 +262,23 @@ export function DateModal({ date, dateKey, onClose }) {
                 ))
               )}
             </div>
+          </section>
+
+          {/* Challenges Faced */}
+          <section className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+              <MessageSquare size={16} className="text-rose-500" /> You Faced Any Challenges?
+            </h3>
+            <p className="text-xs text-slate-500 mb-3">
+              Mention blockers you hit today so your mentor can help faster.
+            </p>
+            <textarea
+              value={dayReflection.challenge || ''}
+              onChange={(e) => updateReflection(dateKey, { ...dayReflection, challenge: e.target.value })}
+              placeholder={isSubmitted ? 'No challenges were added for this day.' : 'Example: DSA recursion me dikkat aayi, or API debugging me 2 hours lag gaye...'}
+              disabled={isSubmitted}
+              className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none resize-y h-24 ${isSubmitted ? 'bg-slate-50/50 border-slate-100 text-slate-600 cursor-not-allowed' : 'bg-white border-slate-200 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400'}`}
+            />
           </section>
 
           {/* Extra / End of Day Summary */}

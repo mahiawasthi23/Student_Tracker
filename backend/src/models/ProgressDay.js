@@ -36,6 +36,7 @@ const progressDaySchema = new mongoose.Schema(
     },
     reflection: {
       goals: { type: [goalSchema], default: [] },
+      challenge: { type: String, trim: true, default: "" },
       extra: {
         text: { type: String, trim: true, default: "" },
         hours: { type: Number, default: 0, min: 0 },
