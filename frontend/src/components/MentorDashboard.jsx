@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Eye, User2 } from 'lucide-react';
+import { Eye, RefreshCw, Search, User2 } from 'lucide-react';
 import { useProgress } from '../context/ProgressContext';
 
 const STUDENTS_PER_PAGE = 5;
@@ -8,6 +8,7 @@ export function MentorDashboard({ onViewStudent }) {
   const { getMentorStudents, getMentorStudentState } = useProgress();
   const [campus, setCampus] = useState('');
   const [students, setStudents] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loadingStudents, setLoadingStudents] = useState(true);
   const [loadingStudentId, setLoadingStudentId] = useState('');
   const [error, setError] = useState('');
@@ -33,9 +34,24 @@ export function MentorDashboard({ onViewStudent }) {
     loadStudents();
   }, []);
 
-  const totalPages = Math.max(1, Math.ceil(students.length / STUDENTS_PER_PAGE));
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredStudents = students.filter((student) => {
+    if (!normalizedSearch) {
+      return true;
+    }
+
+    const name = (student.name || '').toLowerCase();
+    const email = (student.email || '').toLowerCase();
+    return name.includes(normalizedSearch) || email.includes(normalizedSearch);
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / STUDENTS_PER_PAGE));
   const startIndex = (currentPage - 1) * STUDENTS_PER_PAGE;
-  const pagedStudents = students.slice(startIndex, startIndex + STUDENTS_PER_PAGE);
+  const pagedStudents = filteredStudents.slice(startIndex, startIndex + STUDENTS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const goToPreviousPage = () => {
     setCurrentPage((prev) => Math.max(1, prev - 1));
@@ -59,26 +75,41 @@ export function MentorDashboard({ onViewStudent }) {
   };
 
   return (
-    <div className="mx-auto max-w-6xl animate-in fade-in pb-10 space-y-6">
+    <div className="mx-auto max-w-6xl animate-in fade-in space-y-6 pb-10">
       {error && (
-        <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>
+        <p className="rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm">
+          {error}
+        </p>
       )}
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50 to-sky-50/50 p-5 shadow-lg shadow-slate-200/50 sm:p-6">
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Mentor Dashboard</h2>
-            <p className="mt-1 text-sm text-slate-600">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Mentor Dashboard</h2>
+            <p className="mt-1 text-sm font-medium text-slate-600">
               {campus ? `Campus: ${campus}` : 'Campus not set'} | Open student workspace in read-only mode.
             </p>
           </div>
           <button
             type="button"
             onClick={loadStudents}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow"
           >
-            Refresh List
+            <RefreshCw size={14} /> Refresh List
           </button>
+        </div>
+
+        <div className="mb-5 rounded-2xl border border-slate-200 bg-white/90 p-2 shadow-sm">
+          <label className="flex items-center gap-2 px-2">
+            <Search size={16} className="text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search by student name or email"
+              className="w-full bg-transparent px-1 py-1.5 text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400"
+            />
+          </label>
         </div>
 
         {loadingStudents ? (
@@ -87,11 +118,15 @@ export function MentorDashboard({ onViewStudent }) {
           <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
             No students found for this campus yet.
           </p>
+        ) : filteredStudents.length === 0 ? (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            No student matched "{searchQuery.trim()}". Try searching with another name or email.
+          </p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
             <table className="min-w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-200 bg-slate-50/80 text-xs uppercase tracking-wide text-slate-500">
                   <th className="px-3 py-3">Student</th>
                   <th className="px-3 py-3">Email</th>
                   <th className="px-3 py-3">Action</th>
@@ -101,10 +136,13 @@ export function MentorDashboard({ onViewStudent }) {
                 {pagedStudents.map((student) => {
                   const isLoadingThisRow = loadingStudentId === student.id;
                   return (
-                    <tr key={student.id} className="border-b border-slate-100">
+                    <tr key={student.id} className="border-b border-slate-100 transition-colors hover:bg-sky-50/70">
                       <td className="px-3 py-3">
                         <span className="inline-flex items-center gap-2 font-semibold text-slate-800">
-                          <User2 size={14} /> {student.name}
+                          <span className="rounded-full border border-sky-200 bg-sky-100/80 p-1 text-sky-700">
+                            <User2 size={12} />
+                          </span>
+                          {student.name}
                         </span>
                       </td>
                       <td className="px-3 py-3 text-slate-700">{student.email}</td>
@@ -113,7 +151,7 @@ export function MentorDashboard({ onViewStudent }) {
                           type="button"
                           onClick={() => handleViewStudent(student)}
                           disabled={Boolean(loadingStudentId)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <Eye size={14} /> {isLoadingThisRow ? 'Opening...' : 'Details'}
                         </button>
@@ -124,13 +162,13 @@ export function MentorDashboard({ onViewStudent }) {
               </tbody>
             </table>
 
-            {students.length > STUDENTS_PER_PAGE && (
-              <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
+            {filteredStudents.length > STUDENTS_PER_PAGE && (
+              <div className="mt-4 flex items-center justify-between border-t border-slate-200 px-3 pb-1 pt-4">
                 <button
                   type="button"
                   onClick={goToPreviousPage}
                   disabled={currentPage === 1}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Previous
                 </button>
@@ -143,7 +181,7 @@ export function MentorDashboard({ onViewStudent }) {
                   type="button"
                   onClick={goToNextPage}
                   disabled={currentPage === totalPages}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Next
                 </button>
