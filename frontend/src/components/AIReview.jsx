@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useProgress } from '../context/ProgressContext';
-import { Sparkles, TrendingUp, Loader2, Key, Target, AlertCircle } from 'lucide-react';
+import { Sparkles, Loader2, Key } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { buildProgressStats } from '../utils/progressStats';
+import { buildAiFeedbackPrompt } from '../utils/aiPromptBuilder';
+import { FeedbackCard } from './FeedbackCard';
 
 export function AIReview() {
   const { goals, reflections } = useProgress();
@@ -17,7 +19,9 @@ export function AIReview() {
   const [isEditingKey, setIsEditingKey] = useState(!geminiKey);
   const [keyInput, setKeyInput] = useState(geminiKey || '');
 
-  const [gbuResult, setGbuResult] = useState(null);
+  const [aiFeedback, setAiFeedback] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState(null);
 
   const stats = useMemo(
     () => buildProgressStats({ goals, reflections, filter, customRange, includeReviewTexts: true }),
@@ -25,7 +29,8 @@ export function AIReview() {
   );
 
   useEffect(() => {
-    setGbuResult(null);
+    setAiFeedback(null);
+    setError(null);
   }, [goals, reflections, filter, customRange]);
 
   const handleSaveKey = () => {
@@ -33,110 +38,121 @@ export function AIReview() {
     setIsEditingKey(false);
   };
 
-  const generateGBU = async () => {
+  const generateAiFeedback = async () => {
     if (!geminiKey) {
       setIsEditingKey(true);
       return;
     }
 
-    setGbuResult({ isGenerating: true });
-    
+    setIsGenerating(true);
+    setError(null);
+    setAiFeedback(null);
+
     try {
       const { totalHours, activeDays, goalsCompleted, totalGoalsCount, totalReflections, chartData, reviewTexts } = stats;
       const totalDays = chartData.length || 1;
-      
-      const prompt = `
-      You are an insightful and world-class productivity coach. Analyze the user's tracking data for the selected period (${filter}):
-      - Total Hours Logged: ${totalHours}
-      - Active Days Logged: ${activeDays} out of ${totalDays}
-      - Goals Completed: ${goalsCompleted} out of ${totalGoalsCount}
-      - Total Reflection Notes Written: ${totalReflections}
 
-      Daily Hours Breakdown:
-      ${JSON.stringify(chartData.map(d => ({date: d.name, hrs: d.hours})))}
-
-      Recent Reflection Notes Sample:
-      ${JSON.stringify(reviewTexts)}
-
-      Please generate a highly concise, encouraging, and specific analysis.
-      Do NOT wrap your response in markdown code blocks like \`\`\`json. Just give me the pure raw JSON object.
-      You MUST respond ONLY with valid JSON structure with exactly three string keys:
-      {
-        "good": "Highlight what went well, mentioning specific streak or high hours...",
-        "bad": "Be critical but fair. Mention if there were big gaps in days, crammed hours, or uncompleted tasks...",
-        "improve": "Give EXACT actionable advice based on the bad patterns..."
-      }
-      `;
-
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.6, maxOutputTokens: 2000 }
-        })
+      const prompt = buildAiFeedbackPrompt({
+        totalHours: parseFloat(totalHours),
+        activeDays,
+        totalDays,
+        goalsCompleted,
+        totalGoalsCount,
+        totalReflections,
+        chartData,
+        reviewTexts,
+        filter,
       });
 
-      if (!res.ok) throw new Error("API Request Failed. Check your API key.");
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.6, maxOutputTokens: 2000 },
+          }),
+        }
+      );
+
+      if (!res.ok) throw new Error('API Request Failed. Check your API key.');
 
       const data = await res.json();
       const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      
-      if (!textResponse) throw new Error("Invalid response from Gemini.");
 
-      const cleanedText = textResponse.replace(/^```json/g, '').replace(/^```/g, '').replace(/```$/g, '').trim();
-      
-      let parsedGbu;
-      try {
-        parsedGbu = JSON.parse(cleanedText);
-      } catch {
-        console.error("JSON Parse Error. Raw Text:", cleanedText);
-        // Fallback: Make a best-effort structural parse if it's broken or cut-off
-        parsedGbu = {
-          good: "Successfully generated raw insights, but failed to format them.",
-          bad: "Data formatting error.",
-          improve: cleanedText.substring(0, 500) + "..." // show raw text as fallback
-        };
+      if (!textResponse) throw new Error('Invalid response from Gemini.');
+
+      // Clean response
+      let cleanedText = textResponse
+        .replace(/^```json/g, '')
+        .replace(/^```/g, '')
+        .replace(/```$/g, '')
+        .trim();
+
+      // Try to extract JSON if there's extra text
+      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanedText = jsonMatch[0];
       }
 
-      setGbuResult({ 
-        good: parsedGbu.good || "Data analyzed successfully.", 
-        bad: parsedGbu.bad || "No specific issues detected.", 
-        improve: parsedGbu.improve || "Keep up the great work!", 
-        isGenerating: false,
-        rawText: cleanedText // store for debugging if needed
+      let parsedFeedback;
+      try {
+        parsedFeedback = JSON.parse(cleanedText);
+      } catch (parseErr) {
+        console.error('JSON Parse Error:', parseErr, 'Raw text:', cleanedText);
+        throw new Error('AI response was incomplete. Please try again.');
+      }
+
+      // Validate all required fields exist
+      const defaultFeedback = {
+        productivity: ['Visit your dashboard for details'],
+        consistency: ['Keep logging daily'],
+        goalQuality: ['Review your goal-setting'],
+        timeUsage: ['Try to reach 8 hrs/day'],
+        pattern: ['Check for weekly patterns'],
+        reflection: ['Reflect on your progress'],
+        challenges: ['Identify and address blockers'],
+        nextAction: ['Keep up the momentum'],
+      };
+
+      // Ensure all fields are arrays
+      Object.keys(defaultFeedback).forEach(key => {
+        if (!parsedFeedback[key] || !Array.isArray(parsedFeedback[key])) {
+          parsedFeedback[key] = defaultFeedback[key];
+        }
       });
 
+      setAiFeedback(parsedFeedback);
     } catch (err) {
-      console.error(err);
-      setGbuResult({ 
-        good: "N/A", 
-        bad: "Failed to connect to Gemini API.", 
-        improve: err.message || "Please verify your API key and try again.", 
-        isGenerating: false 
-      });
+      console.error('Error generating feedback:', err);
+      setError(err.message || 'Failed to generate feedback. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in pb-12">
+    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in pb-16">
       
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 md:p-8 rounded-3xl border-2 border-slate-200 shadow-lg">
         <div className="flex items-start gap-4">
-          <div className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl shrink-0">
+          <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl shrink-0">
             <Sparkles size={32} />
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-slate-800">Gemini Insights</h2>
-            <p className="text-slate-500 mt-1 max-w-md">Your personal AI productivity coach. Select a timeframe to generate deep analysis from your recent logs.</p>
+            <h2 className="text-3xl font-black text-slate-900">AI Coach Feedback</h2>
+            <p className="text-slate-600 mt-1 max-w-md text-sm">Personalized insights based on your study patterns and 8-hour daily benchmark.</p>
           </div>
         </div>
         
-        <div className="flex flex-col gap-3 min-w-[200px]">
+        <div className="flex flex-col gap-2 min-w-[200px]">
           <select 
             value={filter} 
             onChange={(e) => setFilter(e.target.value)}
-            className="w-full bg-slate-50 border-none text-slate-700 text-sm font-medium rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3 cursor-pointer transition-shadow hover:shadow-sm"
+            disabled={isGenerating}
+            className="w-full bg-slate-50 border-2 border-slate-200 text-slate-700 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3 cursor-pointer transition-all"
           >
             <option value="week">This Week</option>
             <option value="month">This Month</option>
@@ -145,165 +161,152 @@ export function AIReview() {
           </select>
 
           {filter === 'custom' && (
-            <div className="flex flex-col gap-2 p-3 bg-slate-50 rounded-xl">
+            <div className="flex flex-col gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
               <input 
                 type="date" 
                 value={customRange.start} 
                 onChange={e => setCustomRange(prev => ({...prev, start: e.target.value}))}
-                className="text-sm px-3 py-2 text-slate-700 bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg w-full"
+                className="text-sm px-3 py-2 text-slate-700 bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg w-full"
               />
               <input 
                 type="date" 
                 value={customRange.end} 
                 onChange={e => setCustomRange(prev => ({...prev, end: e.target.value}))}
-                className="text-sm px-3 py-2 text-slate-700 bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg w-full"
+                className="text-sm px-3 py-2 text-slate-700 bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg w-full"
               />
             </div>
           )}
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden shadow-indigo-100/50">
-        
-        {isEditingKey ? (
-          <div className="p-10 text-center max-w-xl mx-auto flex flex-col items-center">
-             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-6">
-               <Key size={32} />
-             </div>
-             <h3 className="text-2xl font-bold text-slate-800 mb-2">Connect to Gemini</h3>
-             <p className="text-slate-500 mb-8">
-               To keep your data 100% private and avoid backend servers, this application communicates directly with Google's API from your browser. 
-               Please securely provide your free Gemini API key to unlock AI insights.
-             </p>
-             <div className="w-full flex flex-col gap-4">
-               <input 
-                 type="password" 
-                 value={keyInput} 
-                 onChange={(e) => setKeyInput(e.target.value)}
-                 placeholder="Paste your Gemini AI key here..." 
-                 className="w-full px-5 py-4 bg-slate-50 border border-slate-200 text-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-center font-mono" 
-               />
-               <div className="flex gap-3 w-full">
-                  {geminiKey && (
-                    <button 
-                      onClick={() => { setKeyInput(geminiKey); setIsEditingKey(false); }}
-                      className="flex-1 py-4 text-slate-600 font-bold bg-slate-100 rounded-xl hover:bg-slate-200 transition-all"
-                    >
-                      Cancel
-                    </button>
+      {/* Main Content */}
+      {isEditingKey ? (
+        // API Key Setup
+        <div className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl p-10 max-w-2xl mx-auto text-center flex flex-col items-center">
+          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-6">
+            <Key size={32} />
+          </div>
+          <h3 className="text-2xl font-bold text-slate-900 mb-2">Setup Gemini API</h3>
+          <p className="text-slate-600 mb-8 text-sm leading-relaxed max-w-lg">
+            To get AI-powered feedback, please add your Google Gemini API key. Your key is stored securely in your browser and never sent to our servers.
+          </p>
+          <div className="w-full flex flex-col gap-4 max-w-xl">
+            <input 
+              type="password" 
+              value={keyInput} 
+              onChange={(e) => setKeyInput(e.target.value)}
+              placeholder="Paste your Google Gemini API key..." 
+              className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-300 text-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-center font-mono text-sm" 
+            />
+            <p className="text-xs text-slate-500">
+              Get free API key at <a href="https://ai.google.dev" target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-semibold hover:underline">ai.google.dev</a>
+            </p>
+            <div className="flex gap-3 w-full pt-2">
+              {geminiKey && (
+                <button 
+                  onClick={() => { setKeyInput(geminiKey); setIsEditingKey(false); }}
+                  className="flex-1 py-3 text-slate-700 font-bold bg-slate-200 rounded-xl hover:bg-slate-300 transition-all"
+                >
+                  Cancel
+                </button>
+              )}
+              <button 
+                onClick={handleSaveKey} 
+                disabled={!keyInput.trim()}
+                className="flex-[geminiKey ? 1 : 2] py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {geminiKey ? 'Update Key' : 'Save Key'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Generate Button */}
+          <div className="flex justify-between items-center gap-4">
+            <h3 className="text-lg font-semibold text-slate-700">
+              {aiFeedback ? 'Your Personalized Feedback' : 'Generate AI Feedback'}
+            </h3>
+            <div className="flex gap-2">
+              {!aiFeedback && (
+                <button 
+                  onClick={generateAiFeedback}
+                  disabled={isGenerating}
+                  className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 text-white rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? (
+                    <><Loader2 className="animate-spin" size={18}/> Analyzing...</>
+                  ) : (
+                    <><Sparkles size={18}/> Generate Feedback</>
                   )}
-                  <button 
-                    onClick={handleSaveKey} 
-                    disabled={!keyInput.trim()}
-                    className="flex-[2] py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md disabled:opacity-50 disabled:shadow-none"
-                  >
-                    Save Secret Key
-                  </button>
-               </div>
-             </div>
-          </div>
-        ) : (
-          <div className="flex flex-col h-full">
-            <div className="bg-slate-900 p-8 text-white relative overflow-hidden">
-               <div className="absolute top-[-50%] right-[-10%] w-[300px] h-[300px] bg-indigo-500/30 blur-[100px] rounded-full pointer-events-none"></div>
-               <div className="absolute bottom-[-50%] left-[-10%] w-[300px] h-[300px] bg-purple-500/30 blur-[100px] rounded-full pointer-events-none"></div>
-               
-               <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
-                 <div className="max-w-lg text-center md:text-left">
-                   <h3 className="text-2xl font-bold mb-2">Generate Your Review</h3>
-                   <p className="text-slate-300 text-sm leading-relaxed">
-                     Gemini processes your logging cadence, reflection notes, and goal tracking hit-rates to map out customized advice specifically tailored to what you did {filter === 'week' ? "this week" : filter === 'month' ? "this month" : "recently"}.
-                   </p>
-                 </div>
-                 <div className="flex flex-col items-center gap-2 shrink-0">
-                    <button 
-                      onClick={generateGBU}
-                      disabled={gbuResult?.isGenerating}
-                      className="px-8 py-4 bg-white text-slate-900 rounded-2xl font-bold text-lg shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-80 disabled:hover:scale-100 disabled:cursor-not-allowed group w-full md:w-auto min-w-[220px]"
-                    >
-                      {gbuResult?.isGenerating ? (
-                        <><Loader2 className="animate-spin text-indigo-600" size={24}/> Analyzing...</>
-                      ) : (
-                        <><Sparkles className="text-indigo-600 group-hover:rotate-12 transition-transform" size={24}/> Start Analysis</>
-                      )}
-                    </button>
-                    <button onClick={() => setIsEditingKey(true)} className="text-xs text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-wider font-semibold mt-1">
-                      Manage API Key
-                    </button>
-                 </div>
-               </div>
-            </div>
-
-            {/* Content Area */}
-            <div className="p-8 md:p-10 bg-slate-50 flex-1 min-h-[400px]">
-               {!gbuResult ? (
-                 <div className="flex flex-col items-center justify-center h-full text-center text-slate-400 py-12">
-                    <div className="w-24 h-24 mb-6 relative">
-                       <div className="absolute inset-0 border-4 border-dashed border-slate-200 rounded-full animate-[spin_10s_linear_infinite]"></div>
-                       <div className="absolute inset-0 flex items-center justify-center">
-                         <Sparkles size={32} className="text-slate-300" />
-                       </div>
-                    </div>
-                    <p className="text-lg font-medium text-slate-600 mb-2">Ready to crunch the numbers</p>
-                    <p className="text-sm max-w-sm">Hit the button above to securely analyze your local tracking data using Gemini 2.5 Flash.</p>
-                 </div>
-               ) : gbuResult.isGenerating ? (
-                 <div className="flex flex-col items-center justify-center h-full text-center py-16 animate-in fade-in duration-500">
-                    <div className="relative mb-8">
-                       <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center">
-                         <Loader2 className="animate-spin text-indigo-600" size={40}/>
-                       </div>
-                       <div className="absolute inset-0 rounded-full border-4 border-indigo-600 opacity-20 animate-ping"></div>
-                    </div>
-                    <h4 className="text-xl font-bold text-slate-800 mb-2">Gemini is thinking...</h4>
-                    <p className="text-slate-500 text-sm max-w-sm">Scanning {stats.totalReflections} reflection entries and {stats.totalHours} hours of deep work patterns.</p>
-                 </div>
-               ) : (
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-bottom-8 duration-700 fade-in">
-                    
-                    {/* GOOD */}
-                    <div className="bg-white border border-emerald-100 p-6 rounded-3xl shadow-sm shadow-emerald-100 relative overflow-hidden group hover:shadow-md transition-shadow">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -z-0 opacity-50 group-hover:scale-110 transition-transform"></div>
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl"><TrendingUp size={20}/></div>
-                          <h4 className="font-black text-slate-800 text-lg uppercase tracking-wide">The Good</h4>
-                        </div>
-                        <p className="text-slate-600 leading-relaxed">{gbuResult.good}</p>
-                      </div>
-                    </div>
-
-                    {/* BAD */}
-                    <div className="bg-white border border-rose-100 p-6 rounded-3xl shadow-sm shadow-rose-100 relative overflow-hidden group hover:shadow-md transition-shadow md:mt-8">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-bl-full -z-0 opacity-50 group-hover:scale-110 transition-transform"></div>
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="bg-rose-100 text-rose-600 p-2 rounded-xl"><AlertCircle size={20}/></div>
-                          <h4 className="font-black text-slate-800 text-lg uppercase tracking-wide">The Bad</h4>
-                        </div>
-                        <p className="text-slate-600 leading-relaxed">{gbuResult.bad}</p>
-                      </div>
-                    </div>
-
-                    {/* IMPROVE */}
-                    <div className="bg-white border border-amber-100 p-6 rounded-3xl shadow-sm shadow-amber-100 relative overflow-hidden group hover:shadow-md transition-shadow md:mt-16">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-bl-full -z-0 opacity-50 group-hover:scale-110 transition-transform"></div>
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="bg-amber-100 text-amber-600 p-2 rounded-xl"><Target size={20}/></div>
-                          <h4 className="font-black text-slate-800 text-lg uppercase tracking-wide">Improvement</h4>
-                        </div>
-                        <p className="text-slate-600 leading-relaxed font-medium">{gbuResult.improve}</p>
-                      </div>
-                    </div>
-
-                 </div>
-               )}
+                </button>
+              )}
+              <button 
+                onClick={() => setIsEditingKey(true)} 
+                className="px-4 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-semibold transition-all flex items-center gap-2"
+              >
+                <Key size={18} />
+                {geminiKey && aiFeedback ? 'Change Key' : 'API Key'}
+              </button>
             </div>
           </div>
-        )}
-      </div>
 
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-50 border-2 border-red-200 text-red-700 p-4 rounded-xl font-medium">
+              ⚠️ {error}
+            </div>
+          )}
+
+          {/* Loading State */}
+          {isGenerating && (
+            <div className="bg-white rounded-3xl border-2 border-slate-200 p-12 flex flex-col items-center justify-center">
+              <div className="relative mb-6">
+                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <Loader2 className="animate-spin text-indigo-600" size={32} />
+                </div>
+                <div className="absolute inset-0 rounded-full border-4 border-indigo-600 opacity-20 animate-pulse"></div>
+              </div>
+              <h4 className="text-xl font-bold text-slate-800 mb-2">Analyzing your progress...</h4>
+              <p className="text-slate-500 text-sm">Gemini is processing {stats.totalReflections} reflections and {stats.totalHours}+ hours of data...</p>
+            </div>
+          )}
+
+          {/* Feedback Grid */}
+          {aiFeedback && !isGenerating && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-bottom-6 duration-500 fade-in">
+              <FeedbackCard category="productivity" items={aiFeedback.productivity} />
+              <FeedbackCard category="consistency" items={aiFeedback.consistency} />
+              <FeedbackCard category="goalQuality" items={aiFeedback.goalQuality} />
+              <FeedbackCard category="timeUsage" items={aiFeedback.timeUsage} />
+              <FeedbackCard category="pattern" items={aiFeedback.pattern} />
+              <FeedbackCard category="reflection" items={aiFeedback.reflection} />
+              <FeedbackCard category="challenges" items={aiFeedback.challenges} />
+              <FeedbackCard category="nextAction" items={aiFeedback.nextAction} />
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!aiFeedback && !isGenerating && (
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-3xl border-2 border-dashed border-slate-300 p-12 text-center">
+              <div className="w-24 h-24 mx-auto mb-6 bg-white rounded-full flex items-center justify-center shadow-md">
+                <Sparkles size={40} className="text-indigo-600 opacity-60" />
+              </div>
+              <h4 className="text-xl font-bold text-slate-800 mb-2">Ready for AI Feedback?</h4>
+              <p className="text-slate-600 max-w-lg mx-auto mb-6">
+                Click "Generate Feedback" to get personalized AI insights based on your study patterns, goals completed, and how close you are to the 8-hour daily benchmark.
+              </p>
+              <button 
+                onClick={generateAiFeedback}
+                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg transition-all inline-flex items-center gap-2"
+              >
+                <Sparkles size={20} />
+                Get Started
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
