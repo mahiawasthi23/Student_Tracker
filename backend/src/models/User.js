@@ -15,6 +15,16 @@ const userSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    role: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    campus: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     passwordHash: {
       type: String,
       default: null,

@@ -4,15 +4,28 @@ import { Layout } from './components/Layout';
 import { Calendar } from './components/Calendar';
 import { DateModal } from './components/DateModal';
 import { Dashboard } from './components/Dashboard';
+import { MentorDashboard } from './components/MentorDashboard';
 import { AIReview } from './components/AIReview';
 import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
+import { ProfileSetupModal } from './components/ProfileSetupModal';
 
 function App() {
-  const { user, isAuthenticated, authLoading, signup, login, forgotPassword, loginWithGoogle } = useProgress();
+  const {
+    user,
+    isAuthenticated,
+    authLoading,
+    signup,
+    login,
+    forgotPassword,
+    loginWithGoogle,
+    completeProfileSetup,
+    profileSetupPending,
+  } = useProgress();
   const [view, setView] = useState('calendar');
   const [selectedDate, setSelectedDate] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isSavingProfileSetup, setIsSavingProfileSetup] = useState(false);
 
   const handleDateSelect = (day, dateKey) => {
     setSelectedDate({ day, dateKey });
@@ -24,6 +37,16 @@ function App() {
       setShowAuthModal(false);
     }
   }, [isAuthenticated]);
+
+  const handleProfileSetup = async ({ role, campus }) => {
+    try {
+      setIsSavingProfileSetup(true);
+      await completeProfileSetup({ role, campus });
+      setView('dashboard');
+    } finally {
+      setIsSavingProfileSetup(false);
+    }
+  };
 
   if (authLoading) {
     return (
@@ -51,7 +74,13 @@ function App() {
 
   return (
     <>
-      <Layout view={view} setView={setView} userName={user?.name || 'Student'}>
+      <Layout
+        view={view}
+        setView={setView}
+        userName={user?.name || 'Student'}
+        userRole={user?.role || ''}
+        userCampus={user?.campus || ''}
+      >
         {view === 'calendar' ? (
           <div className="relative">
             <Calendar onDateSelect={handleDateSelect} />
@@ -64,11 +93,16 @@ function App() {
             )}
           </div>
         ) : view === 'dashboard' ? (
-          <Dashboard setView={setView} />
+          user?.role === 'Mentor' ? <MentorDashboard /> : <Dashboard setView={setView} />
         ) : view === 'ai' ? (
           <AIReview setView={setView} />
         ) : null}
       </Layout>
+      <ProfileSetupModal
+        open={isAuthenticated && profileSetupPending}
+        onSubmit={handleProfileSetup}
+        isSaving={isSavingProfileSetup}
+      />
     </>
   );
 }

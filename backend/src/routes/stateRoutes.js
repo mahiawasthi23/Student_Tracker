@@ -17,6 +17,8 @@ router.get("/", async (req, res) => {
     user: {
       name: req.auth.user.name,
       email: req.auth.user.email,
+      role: req.auth.user.role || "",
+      campus: req.auth.user.campus || "",
     },
     goals,
     reflections,
@@ -80,6 +82,8 @@ router.put("/", async (req, res) => {
     user: {
       name: req.auth.user.name,
       email: req.auth.user.email,
+      role: req.auth.user.role || "",
+      campus: req.auth.user.campus || "",
     },
     streak,
     ...nextState,

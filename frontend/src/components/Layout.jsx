@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar as CalendarIcon, LayoutDashboard, Sparkles, LogOut } from 'lucide-react';
 import { useProgress } from '../context/ProgressContext';
 
-export function Layout({ children, view, setView, userName }) {
+export function Layout({ children, view, setView, userName, userRole, userCampus }) {
   const { logout } = useProgress();
 
   return (
@@ -45,6 +45,9 @@ export function Layout({ children, view, setView, userName }) {
 
         <div className="mt-auto pt-6 border-t border-slate-100">
           <p className="text-sm font-medium text-slate-800">Hi {userName} 👋</p>
+          <p className="mt-1 text-xs text-slate-500">
+            {(userRole || 'Student')} • {(userCampus || 'Campus N/A')}
+          </p>
           <button
             onClick={logout}
             className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"

@@ -19,7 +19,16 @@ function sanitizeUser(user) {
     id: String(user._id),
     name: user.name,
     email: user.email,
+    role: user.role || "",
+    campus: user.campus || "",
   };
+}
+
+function normalizeRole(roleValue) {
+  const role = String(roleValue || "").trim().toLowerCase();
+  if (role === "student") return "Student";
+  if (role === "mentor") return "Mentor";
+  return "";
 }
 
 router.post("/signup", async (req, res) => {
@@ -146,6 +155,21 @@ router.post("/google", async (req, res) => {
 });
 
 router.get("/me", requireAuth, async (req, res) => {
+  return res.json({ user: sanitizeUser(req.auth.user) });
+});
+
+router.patch("/profile-setup", requireAuth, async (req, res) => {
+  const campus = String(req.body?.campus || "").trim();
+  const role = normalizeRole(req.body?.role);
+
+  if (!campus || !role) {
+    return res.status(400).json({ message: "Role and campus are required." });
+  }
+
+  req.auth.user.role = role;
+  req.auth.user.campus = campus;
+  await req.auth.user.save();
+
   return res.json({ user: sanitizeUser(req.auth.user) });
 });
 

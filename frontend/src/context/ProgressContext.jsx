@@ -4,6 +4,7 @@ const ProgressContext = createContext();
 const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 const API_BASE_URL = rawApiBaseUrl.replace(/\/+$/, '');
 const AUTH_TOKEN_KEY = 'students_tracker_auth_token';
+const PROFILE_SETUP_PENDING_KEY = 'students_tracker_profile_setup_pending';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useProgress = () => useContext(ProgressContext);
@@ -16,7 +17,21 @@ export const ProgressProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem(AUTH_TOKEN_KEY) || '');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [profileSetupPending, setProfileSetupPending] = useState(
+    () => localStorage.getItem(PROFILE_SETUP_PENDING_KEY) === '1'
+  );
   const didHydrateFromServer = useRef(false);
+
+  const setProfileSetupFlag = (isPending) => {
+    if (isPending) {
+      localStorage.setItem(PROFILE_SETUP_PENDING_KEY, '1');
+      setProfileSetupPending(true);
+      return;
+    }
+
+    localStorage.removeItem(PROFILE_SETUP_PENDING_KEY);
+    setProfileSetupPending(false);
+  };
 
   const getAuthHeaders = () => {
     if (!token) return {};
@@ -79,6 +94,7 @@ export const ProgressProvider = ({ children }) => {
       throw new Error(data.message || 'Signup failed.');
     }
 
+    setProfileSetupFlag(true);
     await completeAuthSession(data);
   };
 
@@ -124,7 +140,29 @@ export const ProgressProvider = ({ children }) => {
       throw new Error(data.message || 'Google authentication failed.');
     }
 
+    if (mode === 'signup') {
+      setProfileSetupFlag(true);
+    }
     await completeAuthSession(data);
+  };
+
+  const completeProfileSetup = async ({ role, campus }) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/profile-setup`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ role, campus }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to save role and campus.');
+    }
+
+    setUser(data.user || { name: '' });
+    setProfileSetupFlag(false);
   };
 
   const logout = () => {
@@ -255,6 +293,8 @@ export const ProgressProvider = ({ children }) => {
       login,
       forgotPassword,
       loginWithGoogle,
+      completeProfileSetup,
+      profileSetupPending,
       logout,
       user, setUser,
       goals, addGoal, updateGoal, deleteGoal,
