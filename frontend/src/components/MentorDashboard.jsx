@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Eye, User2 } from 'lucide-react';
 import { useProgress } from '../context/ProgressContext';
 
+const STUDENTS_PER_PAGE = 5;
+
 export function MentorDashboard({ onViewStudent }) {
   const { getMentorStudents, getMentorStudentState } = useProgress();
   const [campus, setCampus] = useState('');
@@ -9,6 +11,7 @@ export function MentorDashboard({ onViewStudent }) {
   const [loadingStudents, setLoadingStudents] = useState(true);
   const [loadingStudentId, setLoadingStudentId] = useState('');
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const loadStudents = async () => {
     try {
@@ -16,7 +19,9 @@ export function MentorDashboard({ onViewStudent }) {
       setError('');
       const data = await getMentorStudents();
       setCampus(data.campus || '');
-      setStudents(Array.isArray(data.students) ? data.students : []);
+      const nextStudents = Array.isArray(data.students) ? data.students : [];
+      setStudents(nextStudents);
+      setCurrentPage(1);
     } catch (err) {
       setError(err.message || 'Unable to load students.');
     } finally {
@@ -27,6 +32,18 @@ export function MentorDashboard({ onViewStudent }) {
   useEffect(() => {
     loadStudents();
   }, []);
+
+  const totalPages = Math.max(1, Math.ceil(students.length / STUDENTS_PER_PAGE));
+  const startIndex = (currentPage - 1) * STUDENTS_PER_PAGE;
+  const pagedStudents = students.slice(startIndex, startIndex + STUDENTS_PER_PAGE);
+
+  const goToPreviousPage = () => {
+    setCurrentPage((prev) => Math.max(1, prev - 1));
+  };
+
+  const goToNextPage = () => {
+    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+  };
 
   const handleViewStudent = async (student) => {
     try {
@@ -81,7 +98,7 @@ export function MentorDashboard({ onViewStudent }) {
                 </tr>
               </thead>
               <tbody>
-                {students.map((student) => {
+                {pagedStudents.map((student) => {
                   const isLoadingThisRow = loadingStudentId === student.id;
                   return (
                     <tr key={student.id} className="border-b border-slate-100">
@@ -106,6 +123,32 @@ export function MentorDashboard({ onViewStudent }) {
                 })}
               </tbody>
             </table>
+
+            {students.length > STUDENTS_PER_PAGE && (
+              <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
+                <button
+                  type="button"
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 1}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Previous
+                </button>
+
+                <p className="text-xs font-semibold text-slate-600">
+                  Page {currentPage} of {totalPages}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </section>
