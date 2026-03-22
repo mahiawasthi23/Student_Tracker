@@ -65,8 +65,11 @@ const AlertToast = ({ alert, onOpen, onClose }) => {
   );
 };
 
-export function Dashboard({ setView }) {
-  const { goals, reflections, streak } = useProgress();
+export function Dashboard({ setView, goals: goalsOverride, reflections: reflectionsOverride, streak: streakOverride }) {
+  const progress = useProgress();
+  const goals = goalsOverride || progress.goals;
+  const reflections = reflectionsOverride || progress.reflections;
+  const streak = streakOverride || progress.streak;
   const [filter, setFilter] = useState('month'); 
   const [heatmapRange, setHeatmapRange] = useState('6');
   const [isAlertOpen, setIsAlertOpen] = useState(false);

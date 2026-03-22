@@ -34,8 +34,9 @@ export const ProgressProvider = ({ children }) => {
   };
 
   const getAuthHeaders = () => {
-    if (!token) return {};
-    return { Authorization: `Bearer ${token}` };
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!authToken) return {};
+    return { Authorization: `Bearer ${authToken}` };
   };
 
   const persistToken = (nextToken) => {
@@ -163,6 +164,36 @@ export const ProgressProvider = ({ children }) => {
 
     setUser(data.user || { name: '' });
     setProfileSetupFlag(false);
+  };
+
+  const getMentorStudents = async () => {
+    const response = await fetch(`${API_BASE_URL}/api/mentor/students`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch students.');
+    }
+
+    return data;
+  };
+
+  const getMentorStudentState = async (studentId) => {
+    const response = await fetch(`${API_BASE_URL}/api/mentor/students/${studentId}/state`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch student details.');
+    }
+
+    return data;
   };
 
   const logout = () => {
@@ -294,6 +325,8 @@ export const ProgressProvider = ({ children }) => {
       forgotPassword,
       loginWithGoogle,
       completeProfileSetup,
+      getMentorStudents,
+      getMentorStudentState,
       profileSetupPending,
       logout,
       user, setUser,

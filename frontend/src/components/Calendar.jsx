@@ -9,11 +9,13 @@ import { useProgress } from '../context/ProgressContext';
 import { formatDateKey } from '../utils/dateUtils';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-export function Calendar({ onDateSelect }) {
+export function Calendar({ onDateSelect, goals: goalsOverride, reflections: reflectionsOverride, readOnly = false }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDateKey, setSelectedDateKey] = useState(formatDateKey(new Date()));
   const [hideCalendarHint, setHideCalendarHint] = useLocalStorage('calendar_click_hint_dismissed', false);
-  const { goals, reflections } = useProgress();
+  const progress = useProgress();
+  const goals = goalsOverride || progress.goals;
+  const reflections = reflectionsOverride || progress.reflections;
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
@@ -121,7 +123,7 @@ export function Calendar({ onDateSelect }) {
           const today = new Date();
           const daysAgo = differenceInDays(today, day);
           const hasData = dayGoals.length > 0 || Object.keys(dayReflection).length > 0;
-          const isClickable = daysAgo <= 3 || (daysAgo > 3 && hasData);
+          const isClickable = readOnly ? true : daysAgo <= 3 || (daysAgo > 3 && hasData);
 
           return (
             <DayCell 

@@ -2,8 +2,10 @@ import React from 'react';
 import { Calendar as CalendarIcon, LayoutDashboard, Sparkles, LogOut } from 'lucide-react';
 import { useProgress } from '../context/ProgressContext';
 
-export function Layout({ children, view, setView, userName, userRole, userCampus }) {
+export function Layout({ children, view, setView, userName, userRole, userCampus, showStudentSections = false }) {
   const { logout } = useProgress();
+  const isMentor = String(userRole || '').toLowerCase() === 'mentor';
+  const canAccessStudentSections = !isMentor || showStudentSections;
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -17,13 +19,15 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
         </div>
 
         <nav className="flex flex-col gap-2 flex-grow">
-          <button
-            onClick={() => setView('calendar')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${view === 'calendar' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
-          >
-            <CalendarIcon size={18} />
-            Calendar
-          </button>
+          {canAccessStudentSections && (
+            <button
+              onClick={() => setView('calendar')}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${view === 'calendar' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+            >
+              <CalendarIcon size={18} />
+              Calendar
+            </button>
+          )}
           <button
             onClick={() => setView('dashboard')}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${view === 'dashboard' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
@@ -31,16 +35,20 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
             <LayoutDashboard size={18} />
             Dashboard
           </button>
-          
-          <div className="my-2 border-t border-slate-100"></div>
-          
-          <button
-            onClick={() => setView('ai')}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${view === 'ai' ? 'bg-indigo-50 text-indigo-700' : 'text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50'}`}
-          >
-            <Sparkles size={18} />
-            AI Review
-          </button>
+
+          {canAccessStudentSections && (
+            <>
+              <div className="my-2 border-t border-slate-100"></div>
+
+              <button
+                onClick={() => setView('ai')}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${view === 'ai' ? 'bg-indigo-50 text-indigo-700' : 'text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50'}`}
+              >
+                <Sparkles size={18} />
+                AI Review
+              </button>
+            </>
+          )}
         </nav>
 
         <div className="mt-auto pt-6 border-t border-slate-100">
@@ -68,24 +76,28 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
           </h1>
           <div className="flex items-center gap-2">
             <div className="flex bg-slate-100 p-1 rounded-lg">
-              <button
-                onClick={() => setView('calendar')}
-                className={`p-1.5 rounded-md transition-colors ${view === 'calendar' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}
-              >
-                <CalendarIcon size={18} />
-              </button>
+              {canAccessStudentSections && (
+                <button
+                  onClick={() => setView('calendar')}
+                  className={`p-1.5 rounded-md transition-colors ${view === 'calendar' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}
+                >
+                  <CalendarIcon size={18} />
+                </button>
+              )}
               <button
                 onClick={() => setView('dashboard')}
                 className={`p-1.5 rounded-md transition-colors ${view === 'dashboard' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}
               >
                 <LayoutDashboard size={18} />
               </button>
-              <button
-                onClick={() => setView('ai')}
-                className={`p-1.5 rounded-md transition-colors ${view === 'ai' ? 'bg-white shadow-sm text-indigo-600' : 'text-indigo-400'}`}
-              >
-                <Sparkles size={18} />
-              </button>
+              {canAccessStudentSections && (
+                <button
+                  onClick={() => setView('ai')}
+                  className={`p-1.5 rounded-md transition-colors ${view === 'ai' ? 'bg-white shadow-sm text-indigo-600' : 'text-indigo-400'}`}
+                >
+                  <Sparkles size={18} />
+                </button>
+              )}
             </div>
             <button
               onClick={logout}

@@ -7,8 +7,10 @@ import { buildProgressStats } from '../utils/progressStats';
 import { buildAiFeedbackPrompt } from '../utils/aiPromptBuilder';
 import { FeedbackCard } from './FeedbackCard';
 
-export function AIReview() {
-  const { goals, reflections } = useProgress();
+export function AIReview({ goals: goalsOverride, reflections: reflectionsOverride }) {
+  const progress = useProgress();
+  const goals = goalsOverride || progress.goals;
+  const reflections = reflectionsOverride || progress.reflections;
   const [filter, setFilter] = useState('month'); 
   const [customRange, setCustomRange] = useState({ 
     start: format(subDays(new Date(), 7), 'yyyy-MM-dd'), 

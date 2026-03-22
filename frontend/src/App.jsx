@@ -26,6 +26,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isSavingProfileSetup, setIsSavingProfileSetup] = useState(false);
+  const [mentorViewingStudent, setMentorViewingStudent] = useState(null);
 
   const handleDateSelect = (day, dateKey) => {
     setSelectedDate({ day, dateKey });
@@ -37,6 +38,28 @@ function App() {
       setShowAuthModal(false);
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    const isMentor = String(user?.role || '').toLowerCase() === 'mentor';
+    if (isMentor && !mentorViewingStudent && view !== 'dashboard') {
+      setView('dashboard');
+    }
+  }, [user?.role, view, mentorViewingStudent]);
+
+  const handleMentorViewStudent = ({ student, state }) => {
+    setMentorViewingStudent({
+      student,
+      state,
+    });
+    setSelectedDate(null);
+    setView('dashboard');
+  };
+
+  const handleBackToMentorList = () => {
+    setMentorViewingStudent(null);
+    setSelectedDate(null);
+    setView('dashboard');
+  };
 
   const handleProfileSetup = async ({ role, campus }) => {
     try {
@@ -72,6 +95,10 @@ function App() {
     );
   }
 
+  const isMentor = String(user?.role || '').toLowerCase() === 'mentor';
+  const isMentorViewingStudent = isMentor && Boolean(mentorViewingStudent?.state);
+  const studentState = mentorViewingStudent?.state || null;
+
   return (
     <>
       <Layout
@@ -80,22 +107,81 @@ function App() {
         userName={user?.name || 'Student'}
         userRole={user?.role || ''}
         userCampus={user?.campus || ''}
+        showStudentSections={isMentorViewingStudent}
       >
-        {view === 'calendar' ? (
+        {isMentor && !isMentorViewingStudent ? (
+          <MentorDashboard onViewStudent={handleMentorViewStudent} />
+        ) : view === 'calendar' ? (
           <div className="relative">
-            <Calendar onDateSelect={handleDateSelect} />
+            {isMentorViewingStudent && (
+              <div className="mb-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+                Viewing {mentorViewingStudent?.student?.name}&apos;s calendar in read-only mode.
+                <button
+                  type="button"
+                  onClick={handleBackToMentorList}
+                  className="ml-3 rounded-md border border-sky-300 bg-white px-2 py-1 text-xs font-semibold text-sky-700 hover:bg-sky-100"
+                >
+                  Back To Student List
+                </button>
+              </div>
+            )}
+            <Calendar
+              onDateSelect={handleDateSelect}
+              goals={studentState?.goals}
+              reflections={studentState?.reflections}
+              readOnly={isMentorViewingStudent}
+            />
             {selectedDate && (
               <DateModal 
                 date={selectedDate.day} 
                 dateKey={selectedDate.dateKey} 
                 onClose={() => setSelectedDate(null)} 
+                readOnly={isMentorViewingStudent}
+                goals={studentState?.goals}
+                reflections={studentState?.reflections}
               />
             )}
           </div>
         ) : view === 'dashboard' ? (
-          user?.role === 'Mentor' ? <MentorDashboard /> : <Dashboard setView={setView} />
+          <>
+            {isMentorViewingStudent && (
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Viewing {mentorViewingStudent?.student?.name}&apos;s dashboard in read-only mode.
+                <button
+                  type="button"
+                  onClick={handleBackToMentorList}
+                  className="ml-3 rounded-md border border-amber-300 bg-white px-2 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+                >
+                  Back To Student List
+                </button>
+              </div>
+            )}
+            <Dashboard
+              setView={setView}
+              goals={studentState?.goals}
+              reflections={studentState?.reflections}
+              streak={studentState?.streak}
+            />
+          </>
         ) : view === 'ai' ? (
-          <AIReview setView={setView} />
+          <>
+            {isMentorViewingStudent && (
+              <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+                Viewing {mentorViewingStudent?.student?.name}&apos;s AI insights in read-only mode.
+                <button
+                  type="button"
+                  onClick={handleBackToMentorList}
+                  className="ml-3 rounded-md border border-indigo-300 bg-white px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                >
+                  Back To Student List
+                </button>
+              </div>
+            )}
+            <AIReview
+              goals={studentState?.goals}
+              reflections={studentState?.reflections}
+            />
+          </>
         ) : null}
       </Layout>
       <ProfileSetupModal

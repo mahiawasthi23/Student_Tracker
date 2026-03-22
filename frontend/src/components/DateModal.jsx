@@ -160,15 +160,23 @@ const GoalItem = ({ goal, dateKey, updateGoal, deleteGoal, dayReflection, update
 };
 
 // --- Main Modal Component ---
-export function DateModal({ date, dateKey, onClose }) {
-  const { goals, addGoal, deleteGoal, updateGoal, reflections, updateReflection } = useProgress();
+export function DateModal({ date, dateKey, onClose, readOnly = false, goals: goalsOverride, reflections: reflectionsOverride }) {
+  const progress = useProgress();
+  const goals = goalsOverride || progress.goals;
+  const reflections = reflectionsOverride || progress.reflections;
+  const addGoal = progress.addGoal;
+  const deleteGoal = progress.deleteGoal;
+  const updateGoal = progress.updateGoal;
+  const updateReflection = progress.updateReflection;
   const [newGoalText, setNewGoalText] = useState('');
   
   const dayGoals = goals[dateKey] || [];
   const dayReflection = reflections[dateKey] || { goals: [], challenge: '', extra: { text: '', hours: 0 } };
   const isSubmitted = dayReflection.submitted || false;
+  const isLocked = isSubmitted || readOnly;
 
   const handleAdd = (e) => {
+    if (readOnly) return;
     if (e && e.preventDefault) e.preventDefault();
     if (newGoalText.trim()) {
       addGoal(dateKey, newGoalText.trim());
@@ -177,6 +185,7 @@ export function DateModal({ date, dateKey, onClose }) {
   };
 
   const handleExtraChange = (field, value) => {
+    if (readOnly) return;
     updateReflection(dateKey, {
       ...dayReflection,
       extra: { ...(dayReflection.extra || {}), [field]: value }
@@ -184,6 +193,7 @@ export function DateModal({ date, dateKey, onClose }) {
   };
 
   const handleSubmitDay = () => {
+    if (readOnly) return;
     if (window.confirm("Are you sure you want to submit this day? You will not be able to edit these goals or reflections again.")) {
       updateReflection(dateKey, { ...dayReflection, submitted: true });
     }
@@ -199,9 +209,9 @@ export function DateModal({ date, dateKey, onClose }) {
         <div className="px-6 py-4 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
           <h2 className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
             {getDisplayDate(date)}
-            {isSubmitted && (
+            {isLocked && (
               <span className="text-xs tracking-normal bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ml-2">
-                <Lock size={12}/> Locked
+                <Lock size={12}/> {readOnly ? 'Read Only' : 'Locked'}
               </span>
             )}
           </h2>
@@ -225,7 +235,7 @@ export function DateModal({ date, dateKey, onClose }) {
               </span>
             </div>
 
-            {!isSubmitted && (
+            {!isLocked && (
               <div className="flex gap-2 mb-6 shadow-sm">
                 <input
                   type="text" value={newGoalText} onChange={(e) => setNewGoalText(e.target.value)}
@@ -257,7 +267,7 @@ export function DateModal({ date, dateKey, onClose }) {
                     key={goal.id} goal={goal} dateKey={dateKey} 
                     updateGoal={updateGoal} deleteGoal={deleteGoal}
                     dayReflection={dayReflection} updateReflection={updateReflection}
-                    isSubmitted={isSubmitted}
+                    isSubmitted={isLocked}
                   />
                 ))
               )}
@@ -275,9 +285,9 @@ export function DateModal({ date, dateKey, onClose }) {
             <textarea
               value={dayReflection.challenge || ''}
               onChange={(e) => updateReflection(dateKey, { ...dayReflection, challenge: e.target.value })}
-              placeholder={isSubmitted ? 'No challenges were added for this day.' : 'Example: DSA recursion me dikkat aayi, or API debugging me 2 hours lag gaye...'}
-              disabled={isSubmitted}
-              className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none resize-y h-24 ${isSubmitted ? 'bg-slate-50/50 border-slate-100 text-slate-600 cursor-not-allowed' : 'bg-white border-slate-200 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400'}`}
+              placeholder={isLocked ? 'No challenges were added for this day.' : 'Example: DSA recursion me dikkat aayi, or API debugging me 2 hours lag gaye...'}
+              disabled={isLocked}
+              className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none resize-y h-24 ${isLocked ? 'bg-slate-50/50 border-slate-100 text-slate-600 cursor-not-allowed' : 'bg-white border-slate-200 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400'}`}
             />
           </section>
 
@@ -288,19 +298,19 @@ export function DateModal({ date, dateKey, onClose }) {
             </h3>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <p className="text-xs text-slate-500">Log any unplanned extra work, random learnings, or general day thoughts.</p>
-              <Timer value={dayReflection.extra?.hours} onChange={(val) => handleExtraChange('hours', val)} disabled={isSubmitted} />
+              <Timer value={dayReflection.extra?.hours} onChange={(val) => handleExtraChange('hours', val)} disabled={isLocked} />
             </div>
             <textarea
               value={dayReflection.extra?.text || ''}
               onChange={(e) => handleExtraChange('text', e.target.value)}
-              placeholder={isSubmitted ? "No extra summary provided." : "Did anything else happen today?"}
-              disabled={isSubmitted}
-              className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none resize-y h-24 ${isSubmitted ? 'bg-slate-50/50 border-slate-100 text-slate-600 cursor-not-allowed' : 'bg-white border-slate-200 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400'}`}
+              placeholder={isLocked ? "No extra summary provided." : "Did anything else happen today?"}
+              disabled={isLocked}
+              className={`w-full px-3 py-2.5 text-sm border rounded-xl focus:outline-none resize-y h-24 ${isLocked ? 'bg-slate-50/50 border-slate-100 text-slate-600 cursor-not-allowed' : 'bg-white border-slate-200 focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400'}`}
             />
           </section>
 
           {/* Submit Button Section */}
-          {!isSubmitted && dayGoals.length > 0 && (
+          {!isLocked && dayGoals.length > 0 && (
             <div className="pt-2 pb-6 flex justify-end">
               <button
                 onClick={handleSubmitDay}
