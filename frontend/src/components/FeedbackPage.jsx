@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, Calendar, User, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Mail, Calendar, User, MessageCircle, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { useProgress } from '../context/ProgressContext';
 
 export function FeedbackPage({ onBack }) {
-  const { getStudentFeedback, markFeedbackAsSeen, isAuthenticated } = useProgress();
-  const [feedback, setFeedback] = useState([]);
+  const { getStudentFeedback, markFeedbackAsSeen, getAiFeedback, isAuthenticated } = useProgress();
+  const [mentorFeedback, setMentorFeedback] = useState([]);
+  const [aiFeedback, setAiFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const [mentorPage, setMentorPage] = useState(1);
+  const [aiPage, setAiPage] = useState(1);
+  const mentorItemsPerPage = 6;
+  const aiItemsPerPage = 1;
 
   useEffect(() => {
     // Only load if authenticated
@@ -22,11 +25,28 @@ export function FeedbackPage({ onBack }) {
       try {
         setLoading(true);
         setError('');
-        const data = await getStudentFeedback();
-        setFeedback(data);
+        const [mentorData, aiData] = await Promise.all([
+          getStudentFeedback(),
+          getAiFeedback(),
+        ]);
+
+        setMentorFeedback(mentorData);
+
+        const now = Date.now();
+        const tenDaysInMs = 10 * 24 * 60 * 60 * 1000;
+        const filteredAiFeedback = (Array.isArray(aiData) ? aiData : []).filter((item) => {
+          const createdAt = item?.createdAt || `${item?.dateKey || ''}T00:00:00.000Z`;
+          const itemTime = new Date(createdAt).getTime();
+          if (Number.isNaN(itemTime)) return false;
+          return now - itemTime <= tenDaysInMs;
+        });
+
+        setAiFeedback(filteredAiFeedback);
+        setMentorPage(1);
+        setAiPage(1);
 
         // Mark all feedback as seen
-        for (const item of data) {
+        for (const item of mentorData) {
           if (!item.seen) {
             try {
               await markFeedbackAsSeen(item._id);
@@ -43,7 +63,7 @@ export function FeedbackPage({ onBack }) {
     };
 
     loadFeedback();
-  }, [isAuthenticated, getStudentFeedback, markFeedbackAsSeen]);
+  }, [isAuthenticated, getStudentFeedback, getAiFeedback, markFeedbackAsSeen]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -56,10 +76,22 @@ export function FeedbackPage({ onBack }) {
     });
   };
 
+  const formatAiCategory = (key) => {
+    return String(key || '')
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (char) => char.toUpperCase())
+      .trim();
+  };
+
   // Pagination logic
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedFeedback = feedback.slice(startIndex, startIndex + itemsPerPage);
-  const totalPages = Math.ceil(feedback.length / itemsPerPage);
+  const mentorStartIndex = (mentorPage - 1) * mentorItemsPerPage;
+  const paginatedMentorFeedback = mentorFeedback.slice(mentorStartIndex, mentorStartIndex + mentorItemsPerPage);
+  const totalMentorPages = Math.ceil(mentorFeedback.length / mentorItemsPerPage);
+
+  const aiStartIndex = (aiPage - 1) * aiItemsPerPage;
+  const paginatedAiFeedback = aiFeedback.slice(aiStartIndex, aiStartIndex + aiItemsPerPage);
+  const totalAiPages = Math.ceil(aiFeedback.length / aiItemsPerPage);
+  const currentAiItem = paginatedAiFeedback[0] || null;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-10 px-4">
@@ -88,90 +120,185 @@ export function FeedbackPage({ onBack }) {
           </div>
           <p className="text-sm font-medium text-slate-600">Loading your feedback...</p>
         </div>
-      ) : feedback.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-6 py-16 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
-            <Mail size={32} className="text-slate-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-slate-700 mb-1">No Feedback Yet</h3>
-          <p className="text-sm text-slate-600">Your mentor will send personalized feedback here. Keep up the great work!</p>
-        </div>
       ) : (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {paginatedFeedback.map((item, index) => (
-              <div
-                key={item._id}
-                className="group rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50/30 to-sky-100/50 p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-sky-300 hover:-translate-y-1 sm:p-6 h-fit"
-              >
-                {/* Header */}
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 group-hover:from-amber-200 group-hover:to-orange-200 transition-colors flex-shrink-0">
-                      <User size={18} className="text-amber-700" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900">{item.mentorName}</p>
-                      {item.campus && <p className="text-xs text-slate-500">{item.campus}</p>}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                    <Calendar size={13} />
-                    <span>{formatDate(item.createdAt)}</span>
-                  </div>
-                </div>
-
-                {/* Feedback Content */}
-                <div className="rounded-xl border border-sky-200/60 bg-white/80 p-4 backdrop-blur-sm">
-                  <p className="text-sm leading-relaxed text-slate-700 break-words">{item.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination Controls */}
-          {feedback.length > 0 && (
-            <div className="flex flex-col items-center justify-center gap-6 border-t border-slate-200 pt-8">
-              {totalPages > 1 && (
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft size={18} />
-                    Previous
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`px-3 py-2 rounded-lg font-medium transition-all ${
-                          currentPage === page
-                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-              )}
+        <div className="space-y-10">
+          <section className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Mail size={18} className="text-sky-600" />
+              <h2 className="text-xl font-bold text-slate-900">Mentor Feedback</h2>
             </div>
-          )}
+
+            {mentorFeedback.length === 0 ? (
+              <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-6 py-12 text-center">
+                <h3 className="text-lg font-semibold text-slate-700 mb-1">No Mentor Feedback Yet</h3>
+                <p className="text-sm text-slate-600">Your mentor will send personalized feedback here.</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {paginatedMentorFeedback.map((item) => (
+                    <div
+                      key={item._id}
+                      className="group rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-sky-50/30 to-sky-100/50 p-5 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-sky-300 hover:-translate-y-1 sm:p-6 h-fit"
+                    >
+                      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 group-hover:from-amber-200 group-hover:to-orange-200 transition-colors flex-shrink-0">
+                            <User size={18} className="text-amber-700" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900">{item.mentorName}</p>
+                            {item.campus && <p className="text-xs text-slate-500">{item.campus}</p>}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                          <Calendar size={13} />
+                          <span>{formatDate(item.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-sky-200/60 bg-white/80 p-4 backdrop-blur-sm">
+                        <p className="text-sm leading-relaxed text-slate-700 break-words">{item.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {totalMentorPages > 1 && (
+                  <div className="flex items-center justify-center gap-3 border-t border-slate-200 pt-6">
+                    <button
+                      onClick={() => setMentorPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={mentorPage === 1}
+                      className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft size={18} />
+                      Previous
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: totalMentorPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => setMentorPage(page)}
+                          className={`px-3 py-2 rounded-lg font-medium transition-all ${
+                            mentorPage === page
+                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setMentorPage((prev) => Math.min(prev + 1, totalMentorPages))}
+                      disabled={mentorPage === totalMentorPages}
+                      className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} className="text-indigo-600" />
+              <h2 className="text-xl font-bold text-slate-900">AI Feedback</h2>
+            </div>
+
+            {aiFeedback.length === 0 ? (
+              <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-6 py-12 text-center">
+                <h3 className="text-lg font-semibold text-slate-700 mb-1">No AI Feedback In Last 10 Days</h3>
+                <p className="text-sm text-slate-600">Generate AI feedback from the AI page to see it here.</p>
+              </div>
+            ) : (
+              <>
+                <div
+                  key={currentAiItem?._id || currentAiItem?.dateKey || aiPage}
+                  className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-white via-indigo-50/40 to-blue-100/50 p-5 shadow-md ring-1 ring-indigo-100/70 transition-all duration-500 animate-in fade-in slide-in-from-right-4 sm:p-6"
+                >
+                  {paginatedAiFeedback.map((item) => (
+                    <div key={item._id || item.dateKey} className="space-y-5">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/80 px-3 py-1.5 text-xs font-bold text-indigo-700 shadow-sm">
+                          <Sparkles size={14} />
+                          Daily AI Review
+                        </div>
+                        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                          <Calendar size={13} />
+                          <span>{formatDate(item.createdAt || `${item.dateKey}T00:00:00.000Z`)}</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {Object.entries(item.feedback || {}).map(([category, points]) => (
+                          <div
+                            key={category}
+                            className="rounded-2xl border border-indigo-200/70 bg-white/85 p-4 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                          >
+                            <p className="text-sm font-bold text-slate-800 mb-2">{formatAiCategory(category)}</p>
+                            {Array.isArray(points) && points.length > 0 ? (
+                              <ul className="list-disc pl-5 space-y-1.5 text-sm leading-relaxed text-slate-700">
+                                {points.map((point, idx) => (
+                                  <li key={`${category}-${idx}`}>{String(point)}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-slate-600">No details available.</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {totalAiPages > 1 && (
+                  <div className="flex flex-wrap items-center justify-center gap-3 border-t border-indigo-100 pt-6">
+                    <button
+                      onClick={() => setAiPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={aiPage === 1}
+                      className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2 font-semibold text-indigo-700 transition-all hover:bg-indigo-50 hover:border-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft size={18} />
+                      Previous
+                    </button>
+
+                    <div className="flex items-center gap-2 rounded-xl border border-indigo-100 bg-white/80 px-2 py-1">
+                      {Array.from({ length: totalAiPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => setAiPage(page)}
+                          className={`px-3 py-2 rounded-lg font-medium transition-all ${
+                            aiPage === page
+                              ? 'bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-md scale-105'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setAiPage((prev) => Math.min(prev + 1, totalAiPages))}
+                      disabled={aiPage === totalAiPages}
+                      className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2 font-semibold text-indigo-700 transition-all hover:bg-indigo-50 hover:border-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
         </div>
       )}
     </div>

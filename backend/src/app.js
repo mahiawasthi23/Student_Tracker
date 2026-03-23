@@ -8,9 +8,13 @@ const dayRoutes = require("./routes/dayRoutes");
 const userRoutes = require("./routes/userRoutes");
 const mentorRoutes = require("./routes/mentorRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
+const aiFeedbackRoutes = require("./routes/aiFeedbackRoutes");
 const { requireAuth } = require("./middleware/requireAuth");
 
 const app = express();
+
+// Disable ETag so API responses do not return 304 for auth/state endpoints.
+app.set("etag", false);
 
 const normalizeOrigin = (origin = "") => origin.trim().replace(/\/+$/, "");
 
@@ -52,6 +56,7 @@ app.use("/api/state", requireAuth, stateRoutes);
 app.use("/api/days", requireAuth, dayRoutes);
 app.use("/api/mentor", requireAuth, mentorRoutes);
 app.use("/api/feedback", requireAuth, feedbackRoutes);
+app.use("/api/ai-feedback", requireAuth, aiFeedbackRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });

@@ -6,7 +6,7 @@ import { FeedbackModal } from './FeedbackModal';
 const STUDENTS_PER_PAGE = 5;
 
 export function MentorDashboard({ onViewStudent }) {
-  const { getMentorStudents, getMentorStudentState } = useProgress();
+  const { getMentorStudents, getMentorStudentState, isAuthenticated } = useProgress();
   const [campus, setCampus] = useState('');
   const [students, setStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,8 +33,12 @@ export function MentorDashboard({ onViewStudent }) {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     loadStudents();
-  }, []);
+  }, [isAuthenticated]);
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const filteredStudents = students.filter((student) => {

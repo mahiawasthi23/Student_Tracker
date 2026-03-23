@@ -52,8 +52,10 @@ export const ProgressProvider = ({ children }) => {
 
   const loadStateFromBackend = async (authToken) => {
     const response = await fetch(`${API_BASE_URL}/api/state`, {
+      cache: 'no-store',
       headers: {
         Authorization: `Bearer ${authToken}`,
+        'Cache-Control': 'no-cache',
       },
     });
 
@@ -167,9 +169,16 @@ export const ProgressProvider = ({ children }) => {
   };
 
   const getMentorStudents = async () => {
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!authToken) {
+      throw new Error('Authentication required.');
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/mentor/students`, {
+      cache: 'no-store',
       headers: {
         ...getAuthHeaders(),
+        'Cache-Control': 'no-cache',
       },
     });
 
@@ -182,9 +191,16 @@ export const ProgressProvider = ({ children }) => {
   };
 
   const getMentorStudentState = async (studentId) => {
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!authToken) {
+      throw new Error('Authentication required.');
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/mentor/students/${studentId}/state`, {
+      cache: 'no-store',
       headers: {
         ...getAuthHeaders(),
+        'Cache-Control': 'no-cache',
       },
     });
 
@@ -218,8 +234,10 @@ export const ProgressProvider = ({ children }) => {
       try {
         const meResponse = await fetch(`${API_BASE_URL}/api/auth/me`, {
           signal: controller.signal,
+          cache: 'no-store',
           headers: {
             Authorization: `Bearer ${token}`,
+            'Cache-Control': 'no-cache',
           },
         });
 
@@ -317,6 +335,11 @@ export const ProgressProvider = ({ children }) => {
   };
 
   const getStudentFeedback = async () => {
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!authToken) {
+      return [];
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/feedback`, {
       headers: getAuthHeaders(),
     });
@@ -347,6 +370,11 @@ export const ProgressProvider = ({ children }) => {
   };
 
   const markFeedbackAsSeen = async (feedbackId) => {
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!authToken) {
+      return null;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/feedback/${feedbackId}/seen`, {
       method: 'PATCH',
       headers: {
@@ -363,6 +391,11 @@ export const ProgressProvider = ({ children }) => {
   };
 
   const sendFeedbackToStudent = async (studentId, text) => {
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!authToken) {
+      throw new Error('Not authenticated');
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/feedback`, {
       method: 'POST',
       headers: {
@@ -374,6 +407,45 @@ export const ProgressProvider = ({ children }) => {
 
     if (!response.ok) {
       throw new Error('Failed to send feedback');
+    }
+
+    return response.json();
+  };
+
+  const getAiFeedback = async () => {
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!authToken) {
+      return [];
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/ai-feedback`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load AI feedback');
+    }
+
+    return response.json();
+  };
+
+  const saveAiFeedback = async ({ dateKey, feedback }) => {
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!authToken) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/ai-feedback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ dateKey, feedback }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save AI feedback');
     }
 
     return response.json();
@@ -394,6 +466,8 @@ export const ProgressProvider = ({ children }) => {
       getUnseenFeedbackCount,
       markFeedbackAsSeen,
       sendFeedbackToStudent,
+      getAiFeedback,
+      saveAiFeedback,
       profileSetupPending,
       logout,
       user, setUser,

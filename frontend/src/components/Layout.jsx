@@ -11,14 +11,12 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
   useEffect(() => {
     // Only fetch for authenticated students, not for mentors
     if (!isAuthenticated || !canAccessStudentSections) {
-      console.log('Skipping unseen feedback check:', { isAuthenticated, canAccessStudentSections });
       return;
     }
 
     const checkUnseenFeedback = async () => {
       try {
         const count = await getUnseenFeedbackCount();
-        console.log('Unseen feedback count:', count);
         setUnseenCount(count || 0);
       } catch (err) {
         console.error('Failed to load unseen feedback count:', err);

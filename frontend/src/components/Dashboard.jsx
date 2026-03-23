@@ -430,7 +430,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
             <h3 className="font-bold text-slate-800 text-lg">Hours by Day</h3>
             <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg tracking-wide uppercase">Total</span>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-h-[280px]">
             {Number(stats.totalHours) === 0 ? (
               <div className="h-full flex flex-col items-center justify-center opacity-70 pb-10">
                 <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center mb-6 text-slate-400">
@@ -440,7 +440,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
                 <p className="text-slate-500 text-sm max-w-xs text-center">Start your timer in the Calendar to see activity chart populate here.</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={stats.chartData} margin={{ top: 0, right: 0, left: -20, bottom: 20 }}>
                   <XAxis
                     dataKey="name"

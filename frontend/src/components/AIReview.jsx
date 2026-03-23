@@ -7,10 +7,14 @@ import { buildProgressStats } from '../utils/progressStats';
 import { buildAiFeedbackPrompt } from '../utils/aiPromptBuilder';
 import { FeedbackCard } from './FeedbackCard';
 
+const AI_WINDOW_START_MINUTES = 20 * 60 + 30; // 8:30 PM
+const AI_WINDOW_END_MINUTES = 24 * 60; // 12:00 AM
+
 export function AIReview({ goals: goalsOverride, reflections: reflectionsOverride }) {
   const progress = useProgress();
   const goals = goalsOverride || progress.goals;
   const reflections = reflectionsOverride || progress.reflections;
+  const { isAuthenticated, getAiFeedback, saveAiFeedback } = progress;
   const [filter, setFilter] = useState('month'); 
   const [customRange, setCustomRange] = useState({ 
     start: format(subDays(new Date(), 7), 'yyyy-MM-dd'), 
@@ -24,6 +28,20 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
   const [aiFeedback, setAiFeedback] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
+  const [tickNow, setTickNow] = useState(Date.now());
+  const [latestGeneratedDateKey, setLatestGeneratedDateKey] = useState('');
+
+  const now = new Date(tickNow);
+  const todayDateKey = format(now, 'yyyy-MM-dd');
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const isWithinAiWindow = currentMinutes >= AI_WINDOW_START_MINUTES && currentMinutes < AI_WINDOW_END_MINUTES;
+  const hasGeneratedToday = latestGeneratedDateKey === todayDateKey;
+  const generationLocked = !isWithinAiWindow || hasGeneratedToday;
+  const lockMessage = !isWithinAiWindow
+    ? 'AI feedback can be generated only between 8:30 PM and 12:00 AM.'
+    : hasGeneratedToday
+      ? 'You have already generated AI feedback today. Please come back tomorrow after 8:30 PM.'
+      : '';
 
   const stats = useMemo(
     () => buildProgressStats({ goals, reflections, filter, customRange, includeReviewTexts: true }),
@@ -35,12 +53,62 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
     setError(null);
   }, [goals, reflections, filter, customRange]);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTickNow(Date.now());
+    }, 30000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLatestGeneratedDateKey('');
+      return;
+    }
+
+    let ignore = false;
+
+    const loadTodayGenerationStatus = async () => {
+      try {
+        const allAiFeedback = await getAiFeedback();
+        const alreadyGenerated = (Array.isArray(allAiFeedback) ? allAiFeedback : []).some(
+          (item) => item?.dateKey === todayDateKey
+        );
+
+        if (!ignore) {
+          setLatestGeneratedDateKey(alreadyGenerated ? todayDateKey : '');
+        }
+      } catch {
+        if (!ignore) {
+          setLatestGeneratedDateKey('');
+        }
+      }
+    };
+
+    loadTodayGenerationStatus();
+
+    return () => {
+      ignore = true;
+    };
+  }, [isAuthenticated, getAiFeedback, todayDateKey]);
+
   const handleSaveKey = () => {
     setGeminiKey(keyInput.trim());
     setIsEditingKey(false);
   };
 
   const generateAiFeedback = async () => {
+    if (!isWithinAiWindow) {
+      setError('AI feedback can be generated only between 8:30 PM and 12:00 AM.');
+      return;
+    }
+
+    if (hasGeneratedToday) {
+      setError('You can generate AI feedback only once per day. Please come back tomorrow after 8:30 PM.');
+      return;
+    }
+
     if (!geminiKey) {
       setIsEditingKey(true);
       return;
@@ -78,7 +146,25 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
         }
       );
 
-      if (!res.ok) throw new Error('API Request Failed. Check your API key.');
+      if (!res.ok) {
+        let apiMessage = '';
+        try {
+          const errorPayload = await res.json();
+          apiMessage = errorPayload?.error?.message || '';
+        } catch {
+          apiMessage = '';
+        }
+
+        if (res.status === 429) {
+          throw new Error('Gemini quota/rate limit hit (429). Please wait a bit and try again.');
+        }
+
+        if (res.status === 401 || res.status === 403) {
+          throw new Error('API key invalid or blocked. Please verify your Gemini key.');
+        }
+
+        throw new Error(apiMessage || `Gemini request failed (${res.status}). Please try again.`);
+      }
 
       const data = await res.json();
       const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -125,6 +211,12 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
         }
       });
 
+      await saveAiFeedback({
+        dateKey: todayDateKey,
+        feedback: parsedFeedback,
+      });
+
+      setLatestGeneratedDateKey(todayDateKey);
       setAiFeedback(parsedFeedback);
     } catch (err) {
       console.error('Error generating feedback:', err);
@@ -233,11 +325,13 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
               {!aiFeedback && (
                 <button 
                   onClick={generateAiFeedback}
-                  disabled={isGenerating}
+                  disabled={isGenerating || generationLocked}
                   className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 text-white rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 disabled:cursor-not-allowed"
                 >
                   {isGenerating ? (
                     <><Loader2 className="animate-spin" size={18}/> Analyzing...</>
+                  ) : generationLocked ? (
+                    'Locked'
                   ) : (
                     <><Sparkles size={18}/> Generate Feedback</>
                   )}
@@ -252,6 +346,12 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
               </button>
             </div>
           </div>
+
+          {lockMessage && !isGenerating && (
+            <div className={`rounded-xl border px-4 py-3 text-sm font-semibold ${hasGeneratedToday ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+              {lockMessage}
+            </div>
+          )}
 
           {/* Error Display */}
           {error && (
@@ -300,10 +400,11 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
               </p>
               <button 
                 onClick={generateAiFeedback}
-                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg transition-all inline-flex items-center gap-2"
+                disabled={generationLocked}
+                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg transition-all inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Sparkles size={20} />
-                Get Started
+                {generationLocked ? 'Generation Locked' : 'Get Started'}
               </button>
             </div>
           )}
