@@ -1,11 +1,37 @@
-import React from 'react';
-import { Calendar as CalendarIcon, LayoutDashboard, Sparkles, LogOut } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Calendar as CalendarIcon, LayoutDashboard, Mail, Sparkles, LogOut } from 'lucide-react';
 import { useProgress } from '../context/ProgressContext';
 
 export function Layout({ children, view, setView, userName, userRole, userCampus, showStudentSections = false }) {
-  const { logout } = useProgress();
+  const { logout, getUnseenFeedbackCount, isAuthenticated } = useProgress();
+  const [unseenCount, setUnseenCount] = useState(0);
   const isMentor = String(userRole || '').toLowerCase() === 'mentor';
   const canAccessStudentSections = !isMentor || showStudentSections;
+
+  useEffect(() => {
+    // Only fetch for authenticated students, not for mentors
+    if (!isAuthenticated || !canAccessStudentSections) {
+      console.log('Skipping unseen feedback check:', { isAuthenticated, canAccessStudentSections });
+      return;
+    }
+
+    const checkUnseenFeedback = async () => {
+      try {
+        const count = await getUnseenFeedbackCount();
+        console.log('Unseen feedback count:', count);
+        setUnseenCount(count || 0);
+      } catch (err) {
+        console.error('Failed to load unseen feedback count:', err);
+        setUnseenCount(0);
+      }
+    };
+
+    checkUnseenFeedback();
+    // Check every 10 seconds for new feedback
+    const interval = setInterval(checkUnseenFeedback, 10000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, canAccessStudentSections, getUnseenFeedbackCount]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -46,6 +72,21 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
               >
                 <Sparkles size={18} />
                 AI Review
+              </button>
+
+              <button
+                onClick={() => setView('feedback')}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${view === 'feedback' ? 'bg-amber-50 text-amber-700' : 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'}`}
+              >
+                <span className="relative inline-flex">
+                  <Mail size={18} />
+                  {unseenCount > 0 && (
+                    <span className="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-500 text-xs font-bold text-white shadow-md border-2 border-white">
+                      {unseenCount > 9 ? '9+' : unseenCount}
+                    </span>
+                  )}
+                </span>
+                Feedback
               </button>
             </>
           )}
@@ -91,12 +132,27 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
                 <LayoutDashboard size={18} />
               </button>
               {canAccessStudentSections && (
-                <button
-                  onClick={() => setView('ai')}
-                  className={`p-1.5 rounded-md transition-colors ${view === 'ai' ? 'bg-white shadow-sm text-indigo-600' : 'text-indigo-400'}`}
-                >
-                  <Sparkles size={18} />
-                </button>
+                <>
+                  <button
+                    onClick={() => setView('ai')}
+                    className={`p-1.5 rounded-md transition-colors ${view === 'ai' ? 'bg-white shadow-sm text-indigo-600' : 'text-indigo-400'}`}
+                  >
+                    <Sparkles size={18} />
+                  </button>
+                  <button
+                    onClick={() => setView('feedback')}
+                    className={`p-1.5 rounded-md transition-colors ${view === 'feedback' ? 'bg-white shadow-sm text-amber-600' : 'text-amber-400'}`}
+                  >
+                    <span className="relative inline-flex">
+                      <Mail size={18} />
+                      {unseenCount > 0 && (
+                        <span className="absolute -top-2 -right-2 inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-500 text-[10px] font-bold text-white shadow-md border border-white">
+                          {unseenCount > 9 ? '9+' : unseenCount}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </>
               )}
             </div>
             <button

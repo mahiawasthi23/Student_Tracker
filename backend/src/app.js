@@ -7,6 +7,7 @@ const stateRoutes = require("./routes/stateRoutes");
 const dayRoutes = require("./routes/dayRoutes");
 const userRoutes = require("./routes/userRoutes");
 const mentorRoutes = require("./routes/mentorRoutes");
+const feedbackRoutes = require("./routes/feedbackRoutes");
 const { requireAuth } = require("./middleware/requireAuth");
 
 const app = express();
@@ -50,6 +51,7 @@ app.use("/api/user", requireAuth, userRoutes);
 app.use("/api/state", requireAuth, stateRoutes);
 app.use("/api/days", requireAuth, dayRoutes);
 app.use("/api/mentor", requireAuth, mentorRoutes);
+app.use("/api/feedback", requireAuth, feedbackRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });

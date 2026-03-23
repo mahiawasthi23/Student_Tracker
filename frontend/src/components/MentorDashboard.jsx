@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Eye, RefreshCw, Search, User2 } from 'lucide-react';
+import { Eye, MessageSquare, RefreshCw, Search, User2 } from 'lucide-react';
 import { useProgress } from '../context/ProgressContext';
+import { FeedbackModal } from './FeedbackModal';
 
 const STUDENTS_PER_PAGE = 5;
 
@@ -13,6 +14,7 @@ export function MentorDashboard({ onViewStudent }) {
   const [loadingStudentId, setLoadingStudentId] = useState('');
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [feedbackModalStudent, setFeedbackModalStudent] = useState(null);
 
   const loadStudents = async () => {
     try {
@@ -129,6 +131,7 @@ export function MentorDashboard({ onViewStudent }) {
                 <tr className="border-b border-slate-200 bg-slate-50/80 text-xs uppercase tracking-wide text-slate-500">
                   <th className="px-3 py-3">Student</th>
                   <th className="px-3 py-3">Email</th>
+                  <th className="px-3 py-3">Feedback</th>
                   <th className="px-3 py-3">Action</th>
                 </tr>
               </thead>
@@ -146,6 +149,15 @@ export function MentorDashboard({ onViewStudent }) {
                         </span>
                       </td>
                       <td className="px-3 py-3 text-slate-700">{student.email}</td>
+                      <td className="px-3 py-3">
+                        <button
+                          type="button"
+                          onClick={() => setFeedbackModalStudent(student)}
+                          className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-amber-100"
+                        >
+                          <MessageSquare size={14} /> Send
+                        </button>
+                      </td>
                       <td className="px-3 py-3">
                         <button
                           type="button"
@@ -190,6 +202,16 @@ export function MentorDashboard({ onViewStudent }) {
           </div>
         )}
       </section>
+
+      {feedbackModalStudent && (
+        <FeedbackModal
+          student={feedbackModalStudent}
+          onClose={() => setFeedbackModalStudent(null)}
+          onSuccess={() => {
+            // Optional: Can reload students or show success message here
+          }}
+        />
+      )}
     </div>
   );
 }

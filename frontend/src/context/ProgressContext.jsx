@@ -316,6 +316,69 @@ export const ProgressProvider = ({ children }) => {
     }));
   };
 
+  const getStudentFeedback = async () => {
+    const response = await fetch(`${API_BASE_URL}/api/feedback`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load feedback');
+    }
+
+    return response.json();
+  };
+
+  const getUnseenFeedbackCount = async () => {
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!authToken) {
+      return 0; // Return 0 if no token instead of making failed request
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/feedback/count/unseen`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load unseen feedback count');
+    }
+
+    const data = await response.json();
+    return data.unseenCount || 0;
+  };
+
+  const markFeedbackAsSeen = async (feedbackId) => {
+    const response = await fetch(`${API_BASE_URL}/api/feedback/${feedbackId}/seen`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to mark feedback as seen');
+    }
+
+    return response.json();
+  };
+
+  const sendFeedbackToStudent = async (studentId, text) => {
+    const response = await fetch(`${API_BASE_URL}/api/feedback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ studentId, text }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send feedback');
+    }
+
+    return response.json();
+  };
+
   return (
     <ProgressContext.Provider value={{
       isAuthenticated,
@@ -327,6 +390,10 @@ export const ProgressProvider = ({ children }) => {
       completeProfileSetup,
       getMentorStudents,
       getMentorStudentState,
+      getStudentFeedback,
+      getUnseenFeedbackCount,
+      markFeedbackAsSeen,
+      sendFeedbackToStudent,
       profileSetupPending,
       logout,
       user, setUser,

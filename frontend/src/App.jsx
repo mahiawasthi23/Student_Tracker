@@ -6,6 +6,7 @@ import { DateModal } from './components/DateModal';
 import { Dashboard } from './components/Dashboard';
 import { MentorDashboard } from './components/MentorDashboard';
 import { AIReview } from './components/AIReview';
+import { FeedbackPage } from './components/FeedbackPage';
 import { LandingPage } from './components/LandingPage';
 import { AuthModal } from './components/AuthModal';
 import { ProfileSetupModal } from './components/ProfileSetupModal';
@@ -182,6 +183,8 @@ function App() {
               reflections={studentState?.reflections}
             />
           </>
+        ) : view === 'feedback' ? (
+          <FeedbackPage onBack={() => setView('dashboard')} />
         ) : null}
       </Layout>
       <ProfileSetupModal
