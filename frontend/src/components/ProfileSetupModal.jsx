@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-const CAMPUS_OPTIONS = ['Pune', 'Jashpur', 'Bangalore', 'Dharamshala', 'Delhi', 'Sarjapura'];
+const CAMPUS_OPTIONS = ['Pune', 'Jashpur', 'Dharamshala', 'Dantewada', 'Sarjapur', 'Kishanganj', 'Raipur'];
 const ROLE_OPTIONS = ['Student', 'Mentor'];
 
 export function ProfileSetupModal({ open, onSubmit, isSaving }) {
