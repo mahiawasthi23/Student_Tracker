@@ -42,19 +42,23 @@ export function Calendar({ onDateSelect, goals: goalsOverride, reflections: refl
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+    <div className="relative overflow-hidden rounded-3xl border border-pink-100/80 bg-[linear-gradient(to_right,_rgba(251,194,235,0.14),_rgba(166,193,238,0.16))] shadow-lg backdrop-blur-sm flex flex-col">
+      <div className="pointer-events-none absolute -left-20 -top-20 h-52 w-52 rounded-full bg-pink-200/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-16 -right-16 h-52 w-52 rounded-full bg-indigo-200/30 blur-3xl" />
       {/* Header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-slate-100 bg-gradient-to-b from-white to-slate-50/60">
+      <div className="relative px-4 sm:px-6 py-4 border-b border-pink-100/80 bg-white/70">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 grid place-items-center border border-indigo-100">
+            <div className="w-10 h-10 rounded-full bg-[linear-gradient(to_right,_#fbc2eb,_#a6c1ee)] text-white grid place-items-center border border-white/80 shadow-md shadow-pink-200/50">
               <CalendarIcon size={18} />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-800 min-w-[140px]">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-800 min-w-[160px]">
                 {format(currentMonth, dateFormat)}
               </h2>
-              <p className="text-[11px] sm:text-xs text-slate-500">Plan your month with clean daily focus</p>
+              <p className="inline-block mt-1 rounded-full bg-[linear-gradient(to_right,_rgba(251,194,235,0.28),_rgba(166,193,238,0.28))] px-2 py-0.5 text-[11px] sm:text-xs text-slate-600">
+                Plan your month with clean daily focus
+              </p>
             </div>
           </div>
 
@@ -62,21 +66,21 @@ export function Calendar({ onDateSelect, goals: goalsOverride, reflections: refl
             <button 
               onClick={goToToday}
               hidden={isSameMonth(currentMonth, new Date())}
-              className="text-xs font-semibold px-3 py-1.5 bg-white text-slate-600 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors"
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-pink-200 bg-white text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow hover:bg-[linear-gradient(to_right,_rgba(251,194,235,0.2),_rgba(166,193,238,0.2))]"
             >
               Today
             </button>
 
             <button 
               onClick={prevMonth}
-              className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors shadow-sm"
+              className="p-2 rounded-xl border border-pink-200 bg-white/95 text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow hover:bg-[linear-gradient(to_right,_rgba(251,194,235,0.2),_rgba(166,193,238,0.2))]"
               aria-label="Previous month"
             >
               <ChevronLeft size={18} />
             </button>
             <button 
               onClick={nextMonth}
-              className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors shadow-sm"
+              className="p-2 rounded-xl border border-pink-200 bg-white/95 text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow hover:bg-[linear-gradient(to_right,_rgba(251,194,235,0.2),_rgba(166,193,238,0.2))]"
               aria-label="Next month"
             >
               <ChevronRight size={18} />
@@ -86,17 +90,17 @@ export function Calendar({ onDateSelect, goals: goalsOverride, reflections: refl
       </div>
 
       {!hideCalendarHint && (
-        <div className="mx-3 sm:mx-4 mt-3 mb-1 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-sky-50 px-3 py-2.5 flex items-start justify-between gap-3">
+        <div className="mx-3 sm:mx-4 mt-3 mb-1 rounded-2xl border border-pink-200/70 bg-[linear-gradient(to_right,_rgba(251,194,235,0.3),_rgba(166,193,238,0.3))] px-3 py-3 sm:px-4 sm:py-3.5 flex items-start justify-between gap-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="flex items-start gap-2.5 text-slate-700">
-            <span className="mt-0.5 text-indigo-600"><Sparkles size={15} /></span>
-            <p className="text-xs sm:text-sm">
+            <span className="mt-0.5 text-pink-700"><Sparkles size={15} /></span>
+            <p className="text-xs sm:text-sm leading-relaxed">
               New here? Click any day box to add tasks, reflections, and your end-of-day summary.
             </p>
           </div>
           <button
             type="button"
             onClick={() => setHideCalendarHint(true)}
-            className="shrink-0 text-slate-500 hover:text-slate-700 transition-colors"
+            className="shrink-0 rounded-lg p-1 text-slate-500 transition-all duration-200 hover:text-slate-700 hover:bg-white/60 hover:rotate-90"
             aria-label="Dismiss calendar hint"
           >
             <X size={15} />
@@ -105,16 +109,16 @@ export function Calendar({ onDateSelect, goals: goalsOverride, reflections: refl
       )}
 
       {/* Grid Header */}
-      <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/70">
+      <div className="grid grid-cols-7 border-b border-pink-100/80 bg-[linear-gradient(to_right,_rgba(251,194,235,0.2),_rgba(166,193,238,0.2))]">
         {weekDays.map(day => (
-          <div key={day} className="py-2.5 text-center text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          <div key={day} className="py-2.5 text-center text-[10px] sm:text-[11px] font-bold text-slate-600 uppercase tracking-[0.12em]">
             {day}
           </div>
         ))}
       </div>
 
       {/* Grid Body */}
-      <div className="grid grid-cols-7 gap-1.5 p-1.5 sm:p-2 bg-white auto-rows-fr animate-in fade-in duration-200">
+      <div className="grid grid-cols-7 gap-2 p-2 sm:gap-2.5 sm:p-2.5 bg-white/70 auto-rows-fr animate-in fade-in zoom-in-95 duration-300">
         {days.map((day, idx) => {
           const dateKey = formatDateKey(day);
           const dayGoals = goals[dateKey] || [];

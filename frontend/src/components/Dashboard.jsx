@@ -7,14 +7,14 @@ import { buildProgressStats, buildSubmissionHeatmap } from '../utils/progressSta
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const StatsCard = ({ title, value, icon, colorClass }) => (
-  <div className="group bg-white/90 backdrop-blur p-5 sm:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:shadow-slate-200/60 hover:-translate-y-1 transition-all duration-300 flex items-center gap-4">
-    <div className={`p-3.5 sm:p-4 rounded-xl ${colorClass} transition-transform duration-300 group-hover:scale-105`}>
-      {React.createElement(icon, { size: 22 })}
+  <div className="group bg-gradient-to-br from-white via-slate-50/50 to-slate-50/20 backdrop-blur px-6 py-5 sm:px-7 sm:py-6 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-lg hover:shadow-pink-200/30 hover:-translate-y-1 transition-all duration-300 flex flex-col gap-4 min-h-fit w-full">
+    <div className="flex items-start gap-3 w-full">
+      <div className={`p-3.5 sm:p-4 rounded-xl ${colorClass} transition-transform duration-300 group-hover:scale-105 shrink-0 flex items-center justify-center`}>
+        {React.createElement(icon, { size: 20 })}
+      </div>
+      <p className="text-xs sm:text-sm font-semibold text-slate-600 leading-snug flex-1 line-clamp-3">{title}</p>
     </div>
-    <div className="min-w-0">
-      <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
-      <p className="text-xl sm:text-2xl font-bold text-slate-800 truncate">{value}</p>
-    </div>
+    <p className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">{value}</p>
   </div>
 );
 
@@ -22,9 +22,9 @@ const AlertCard = ({ unreadCount, onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className="group relative w-full text-left bg-white/90 backdrop-blur p-5 sm:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:shadow-slate-200/60 hover:-translate-y-1 transition-all duration-300 flex items-center gap-4"
+    className="group relative w-full text-left bg-gradient-to-br from-white via-slate-50/50 to-slate-50/20 backdrop-blur p-5 sm:p-6 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-lg hover:shadow-pink-200/30 hover:-translate-y-1 transition-all duration-300 flex items-center gap-4"
   >
-    <div className="p-3.5 sm:p-4 rounded-xl bg-rose-50 text-rose-600 transition-transform duration-300 group-hover:scale-105 relative">
+    <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-600 transition-transform duration-300 group-hover:scale-105 relative">
       <Bell size={22} />
       {unreadCount > 0 && (
         <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
@@ -35,7 +35,7 @@ const AlertCard = ({ unreadCount, onClick }) => (
       <p className="text-xl sm:text-2xl font-bold text-slate-800 truncate">{unreadCount}</p>
     </div>
     {unreadCount > 0 && (
-      <span className="absolute top-3 right-3 min-w-6 h-6 rounded-full bg-rose-600 text-white text-xs font-bold px-1.5 grid place-items-center shadow animate-pulse">
+      <span className="absolute top-3 right-3 min-w-6 h-6 rounded-full bg-gradient-to-r from-rose-500 to-red-600 text-white text-xs font-bold px-1.5 grid place-items-center shadow animate-pulse border border-white">
         {unreadCount}
       </span>
     )}
@@ -47,8 +47,8 @@ const AlertToast = ({ alert, onOpen, onClose }) => {
 
   return (
     <div className="fixed top-5 right-4 z-[60] w-[min(92vw,360px)] animate-in slide-in-from-right-8 fade-in duration-300">
-      <div className="rounded-2xl border border-rose-200 bg-white shadow-2xl shadow-rose-100 overflow-hidden">
-        <div className="px-4 py-3 bg-rose-50 border-b border-rose-100 flex items-center justify-between">
+      <div className="rounded-2xl border border-rose-200/60 bg-gradient-to-br from-white to-rose-50/30 shadow-2xl shadow-rose-100/40 overflow-hidden backdrop-blur-sm">
+        <div className="px-4 py-3 bg-gradient-to-r from-rose-50 to-rose-100/50 border-b border-rose-200/60 flex items-center justify-between">
           <p className="text-sm font-bold text-rose-700 flex items-center gap-2">
             <Bell size={14} /> New Alert
           </p>
@@ -56,7 +56,7 @@ const AlertToast = ({ alert, onOpen, onClose }) => {
             <X size={14} />
           </button>
         </div>
-        <button onClick={onOpen} className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors">
+        <button onClick={onOpen} className="w-full text-left px-4 py-3 hover:bg-slate-50/50 transition-colors">
           <p className="text-sm font-semibold text-slate-800">{alert.title}</p>
           <p className="text-xs text-slate-600 mt-1 leading-relaxed">{alert.message}</p>
         </button>
@@ -297,15 +297,15 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
       {/* Header & Filters */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Your Dashboard</h2>
-          <p className="text-slate-500 text-sm">Track your progress and insights.</p>
+          <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900">Your Dashboard</h2>
+          <p className="text-slate-500 text-sm mt-2">Track your progress and insights.</p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3">
           <select 
             value={filter} 
             onChange={(e) => setFilter(e.target.value)}
-            className="bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl focus:ring-2 focus:ring-indigo-500 block p-2.5 shadow-sm"
+            className="bg-white border border-pink-200/60 text-slate-700 text-sm font-medium rounded-xl focus:ring-2 focus:ring-pink-400 block p-2.5 shadow-sm hover:border-pink-300 transition-colors"
           >
             <option value="week">This Week</option>
             <option value="month">This Month</option>
@@ -314,19 +314,19 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
           </select>
 
           {filter === 'custom' && (
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl p-1.5 shadow-sm">
+            <div className="flex items-center gap-2 bg-white border border-pink-200/60 rounded-xl p-1.5 shadow-sm">
               <input 
                 type="date" 
                 value={customRange.start} 
                 onChange={e => setCustomRange(prev => ({...prev, start: e.target.value}))}
-                className="text-sm px-2 py-1.5 text-slate-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg"
+                className="text-sm px-2 py-1.5 text-slate-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-pink-400 rounded-lg"
               />
               <span className="text-slate-400 text-sm">to</span>
               <input 
                 type="date" 
                 value={customRange.end} 
                 onChange={e => setCustomRange(prev => ({...prev, end: e.target.value}))}
-                className="text-sm px-2 py-1.5 text-slate-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg"
+                className="text-sm px-2 py-1.5 text-slate-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-pink-400 rounded-lg"
               />
             </div>
           )}
@@ -334,7 +334,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4 w-full">
         <StatsCard 
           title="Total Hours" 
           value={`${stats.totalHours}h`} 
@@ -369,7 +369,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
       </div>
 
       {isAlertOpen && (
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="bg-gradient-to-br from-white via-slate-50/50 to-slate-50/20 p-5 sm:p-6 rounded-3xl border border-slate-200/60 shadow-sm backdrop-blur">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
               <Bell size={18} className="text-rose-600" /> Alert Center
@@ -377,7 +377,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
             <button
               type="button"
               onClick={() => setIsAlertOpen(false)}
-              className="p-2 rounded-full hover:bg-slate-100 text-slate-500"
+              className="p-2 rounded-full hover:bg-pink-100/50 text-slate-500 transition-colors"
               aria-label="Close alerts"
             >
               <X size={16} />
@@ -385,7 +385,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
           </div>
 
           {alerts.length === 0 ? (
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-700">
+            <div className="rounded-xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-emerald-50/50 px-4 py-3 text-sm text-emerald-700">
               No active alerts right now. Keep going.
             </div>
           ) : (
@@ -425,7 +425,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col min-h-[400px]">
+        <div className="lg:col-span-2 bg-gradient-to-br from-white via-slate-50/50 to-slate-50/20 p-6 rounded-3xl border border-slate-200/60 shadow-sm backdrop-blur flex flex-col min-h-[400px]">
           <div className="flex items-center justify-between mb-8">
             <h3 className="font-bold text-slate-800 text-lg">Hours by Day</h3>
             <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg tracking-wide uppercase">Total</span>
@@ -489,7 +489,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
         </div>
       </div>
 
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="bg-gradient-to-br from-white via-emerald-50/20 to-slate-50/20 p-5 sm:p-6 rounded-3xl border border-slate-200/60 shadow-sm backdrop-blur">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
           <div>
             <h3 className="font-bold text-slate-800 text-lg">Submissions Heat Map</h3>
@@ -500,7 +500,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
           <select
             value={heatmapRange}
             onChange={(event) => setHeatmapRange(event.target.value)}
-            className="bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-xl focus:ring-2 focus:ring-indigo-500 block p-2.5 shadow-sm"
+            className="bg-white border border-pink-200/60 text-slate-700 text-sm font-medium rounded-xl focus:ring-2 focus:ring-pink-400 block p-2.5 shadow-sm hover:border-pink-300 transition-colors"
           >
             <option value="3">Last 3 Months</option>
             <option value="6">Last 6 Months</option>

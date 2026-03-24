@@ -230,13 +230,13 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
     <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in pb-16">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 md:p-8 rounded-3xl border-2 border-slate-200 shadow-lg">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/20 p-6 md:p-8 rounded-3xl border border-pink-200/60 shadow-lg backdrop-blur-sm">
         <div className="flex items-start gap-4">
-          <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl shrink-0">
+          <div className="p-4 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-2xl shrink-0 shadow-md shadow-purple-200/50">
             <Sparkles size={32} />
           </div>
           <div>
-            <h2 className="text-3xl font-black text-slate-900">AI Coach Feedback</h2>
+            <h2 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">AI Coach Feedback</h2>
             <p className="text-slate-600 mt-1 max-w-md text-sm">Personalized insights based on your study patterns and 8-hour daily benchmark.</p>
           </div>
         </div>
@@ -246,7 +246,7 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
             value={filter} 
             onChange={(e) => setFilter(e.target.value)}
             disabled={isGenerating}
-            className="w-full bg-slate-50 border-2 border-slate-200 text-slate-700 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-indigo-500 block p-3 cursor-pointer transition-all"
+            className="w-full bg-white border border-pink-200/60 text-slate-700 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-pink-400 block p-3 cursor-pointer transition-all hover:border-pink-300"
           >
             <option value="week">This Week</option>
             <option value="month">This Month</option>
@@ -255,18 +255,18 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
           </select>
 
           {filter === 'custom' && (
-            <div className="flex flex-col gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="flex flex-col gap-2 p-3 bg-white/50 rounded-xl border border-pink-200/60">
               <input 
                 type="date" 
                 value={customRange.start} 
                 onChange={e => setCustomRange(prev => ({...prev, start: e.target.value}))}
-                className="text-sm px-3 py-2 text-slate-700 bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg w-full"
+                className="text-sm px-3 py-2 text-slate-700 bg-white border border-pink-200/60 focus:outline-none focus:ring-2 focus:ring-pink-400 rounded-lg w-full"
               />
               <input 
                 type="date" 
                 value={customRange.end} 
                 onChange={e => setCustomRange(prev => ({...prev, end: e.target.value}))}
-                className="text-sm px-3 py-2 text-slate-700 bg-white border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg w-full"
+                className="text-sm px-3 py-2 text-slate-700 bg-white border border-pink-200/60 focus:outline-none focus:ring-2 focus:ring-pink-400 rounded-lg w-full"
               />
             </div>
           )}
@@ -276,11 +276,11 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
       {/* Main Content */}
       {isEditingKey ? (
         // API Key Setup
-        <div className="bg-white rounded-3xl border-2 border-slate-200 shadow-xl p-10 max-w-2xl mx-auto text-center flex flex-col items-center">
-          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mb-6">
+        <div className="bg-gradient-to-br from-white via-purple-50/20 to-pink-50/20 rounded-3xl border border-pink-200/60 shadow-xl p-10 max-w-2xl mx-auto text-center flex flex-col items-center backdrop-blur-sm">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center text-purple-600 mb-6">
             <Key size={32} />
           </div>
-          <h3 className="text-2xl font-bold text-slate-900 mb-2">Setup Gemini API</h3>
+          <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">Setup Gemini API</h3>
           <p className="text-slate-600 mb-8 text-sm leading-relaxed max-w-lg">
             To get AI-powered feedback, please add your Google Gemini API key. Your key is stored securely in your browser and never sent to our servers.
           </p>
@@ -290,16 +290,16 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
               value={keyInput} 
               onChange={(e) => setKeyInput(e.target.value)}
               placeholder="Paste your Google Gemini API key..." 
-              className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-300 text-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-center font-mono text-sm" 
+              className="w-full px-5 py-4 bg-white border border-pink-200/60 text-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-400 focus:bg-white/80 transition-all text-center font-mono text-sm" 
             />
             <p className="text-xs text-slate-500">
-              Get free API key at <a href="https://ai.google.dev" target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-semibold hover:underline">ai.google.dev</a>
+              Get free API key at <a href="https://ai.google.dev" target="_blank" rel="noopener noreferrer" className="text-pink-600 font-semibold hover:underline">ai.google.dev</a>
             </p>
             <div className="flex gap-3 w-full pt-2">
               {geminiKey && (
                 <button 
                   onClick={() => { setKeyInput(geminiKey); setIsEditingKey(false); }}
-                  className="flex-1 py-3 text-slate-700 font-bold bg-slate-200 rounded-xl hover:bg-slate-300 transition-all"
+                  className="flex-1 py-3 text-slate-700 font-bold bg-slate-200/70 rounded-xl hover:bg-slate-200 transition-all"
                 >
                   Cancel
                 </button>
@@ -307,7 +307,7 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
               <button 
                 onClick={handleSaveKey} 
                 disabled={!keyInput.trim()}
-                className="flex-[geminiKey ? 1 : 2] py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-[geminiKey ? 1 : 2] py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-pink-200/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {geminiKey ? 'Update Key' : 'Save Key'}
               </button>
@@ -326,7 +326,7 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
                 <button 
                   onClick={generateAiFeedback}
                   disabled={isGenerating || generationLocked}
-                  className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 text-white rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-pink-200/50 disabled:opacity-60 text-white rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 disabled:cursor-not-allowed"
                 >
                   {isGenerating ? (
                     <><Loader2 className="animate-spin" size={18}/> Analyzing...</>
@@ -339,7 +339,7 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
               )}
               <button 
                 onClick={() => setIsEditingKey(true)} 
-                className="px-4 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-semibold transition-all flex items-center gap-2"
+                className="px-4 py-3 bg-pink-100/50 hover:bg-pink-200/50 text-pink-700 rounded-xl font-semibold transition-all flex items-center gap-2 border border-pink-200/60"
               >
                 <Key size={18} />
                 {geminiKey && aiFeedback ? 'Change Key' : 'API Key'}
@@ -348,14 +348,14 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
           </div>
 
           {lockMessage && !isGenerating && (
-            <div className={`rounded-xl border px-4 py-3 text-sm font-semibold ${hasGeneratedToday ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+            <div className={`rounded-xl border px-4 py-3 text-sm font-semibold ${hasGeneratedToday ? 'border-emerald-200/60 bg-gradient-to-r from-emerald-50 to-teal-50/30 text-emerald-700' : 'border-amber-200/60 bg-gradient-to-r from-amber-50 to-yellow-50/30 text-amber-700'}`}>
               {lockMessage}
             </div>
           )}
 
           {/* Error Display */}
           {error && (
-            <div className="bg-red-50 border-2 border-red-200 text-red-700 p-4 rounded-xl font-medium">
+            <div className="bg-gradient-to-r from-rose-50 to-red-50/30 border border-rose-200/60 text-rose-700 p-4 rounded-xl font-medium">
               ⚠️ {error}
             </div>
           )}

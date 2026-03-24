@@ -97,10 +97,10 @@ export function FeedbackPage({ onBack }) {
     <div className="mx-auto max-w-6xl space-y-6 pb-10 px-4">
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-amber-100">
-            <MessageCircle size={20} className="text-amber-700" />
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-pink-100 to-purple-100">
+            <MessageCircle size={20} className="text-pink-600" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Mentor Feedback</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">Mentor Feedback</h1>
         </div>
         <p className="text-sm text-slate-600 ml-13">
           Personalized feedback from your mentor to help you grow
@@ -108,15 +108,15 @@ export function FeedbackPage({ onBack }) {
       </div>
 
       {error && (
-        <p className="rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm">
+        <p className="rounded-xl border border-rose-200/60 bg-gradient-to-r from-rose-50 to-pink-50/30 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm">
           {error}
         </p>
       )}
 
       {loading ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 animate-pulse mb-3">
-            <Mail size={20} className="text-slate-400" />
+        <div className="rounded-2xl border border-pink-200/60 bg-gradient-to-br from-white to-pink-50/20 p-8 text-center backdrop-blur-sm">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-pink-100 animate-pulse mb-3">
+            <Mail size={20} className="text-pink-400" />
           </div>
           <p className="text-sm font-medium text-slate-600">Loading your feedback...</p>
         </div>
