@@ -1,236 +1,243 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import {
   ArrowRight,
   Sparkles,
-  Timer,
-  Target,
-  BarChart3,
-  Shield,
-  CheckCircle2,
+  Calendar,
   Clock3,
   BookOpen,
-  Quote,
   Brain,
+  BarChart3,
+  MessageSquare,
+  CheckCircle2,
+  Users,
+  GraduationCap,
 } from 'lucide-react';
 
 export function LandingPage({ onGetStarted }) {
-  const [focusMode, setFocusMode] = useState('deep');
-
-  const focusCard = useMemo(() => {
-    if (focusMode === 'plan') {
-      return {
-        title: 'Smart Planning',
-        value: '6 tasks scheduled',
-        hint: 'Auto-priority for today',
-        tone: 'bg-slate-100 text-slate-700',
-      };
-    }
-
-    if (focusMode === 'review') {
-      return {
-        title: 'Weekly Review',
-        value: '14.2 focus hours',
-        hint: 'Consistency: +18%',
-        tone: 'bg-cyan-100 text-cyan-900',
-      };
-    }
-
-    return {
-      title: 'Deep Focus',
-      value: 'Session running: 45 min',
-      hint: 'Distraction score: low',
-      tone: 'bg-[#5965a8] text-white',
-    };
-  }, [focusMode]);
-
   return (
-    <main className="landing-shell min-h-screen text-slate-900">
-      <section className="w-full px-0 py-0">
-        <header className="flex items-center justify-between rounded-none border-x-0 border-t-0 border-b border-[#d7def8] bg-white/80 px-4 py-3 md:px-6">
-          <div className="flex items-center">
-            <img src="/navgurukul-logo.svg" alt="Navgurukul" className="h-8 w-auto md:h-9" />
+    <main className="min-h-screen bg-[linear-gradient(to_right,_#fbc2eb1f,_#a6c1ee24)] text-slate-800 [font-family:'Poppins','Inter',sans-serif]">
+      <header className="sticky top-0 z-50 border-b border-pink-100/70 bg-white/80 px-4 py-3 backdrop-blur-md md:px-8">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/navgurukul-logo.svg" alt="NavGurukul" className="h-8 w-auto md:h-9" />
+            <span className="hidden text-sm font-semibold text-slate-600 sm:inline">Students Tracker</span>
           </div>
 
-          <nav className="hidden items-center gap-6 text-xs font-semibold text-slate-500 md:flex">
-            <a href="#focus" className="transition-colors hover:text-slate-800">Focus</a>
-            <a href="#reviews" className="transition-colors hover:text-slate-800">Reviews</a>
-          </nav>
-
-          <button
-            onClick={onGetStarted}
-            className="rounded-full border border-[#ced6fa] bg-white px-4 py-1.5 text-xs font-bold text-[#5965a8] transition-colors hover:bg-[#eef1ff]"
-          >
-            Get started
-          </button>
-        </header>
-
-        <section className="soft-card grid gap-5 rounded-none border-x-0 border-t-0 p-5 md:grid-cols-2 md:p-7">
-          <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#6c78b2]">Student Tracker</p>
-            <h1 className="text-4xl font-black leading-tight text-[#2f3a75] md:text-5xl">
-              Turn Your
-              <br />
-              Ambitions Into
-              <br />
-              Reality
-            </h1>
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-slate-600">
-              A calm, simple system to plan your day, stay in focus, and measure your growth every week.
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={onGetStarted}
-                className="inline-flex items-center gap-2 rounded-full bg-[#5965a8] px-5 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5"
-              >
-                Get Started
-                <ArrowRight size={15} />
-              </button>
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#e9edff] px-4 py-2 text-xs font-semibold text-[#5664a8]">
-                <Sparkles size={14} />
-                Focus friendly
-              </span>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[#d6def8] bg-[#e8ecff] p-4 md:p-5">
-            <div className="rounded-xl bg-white p-3 shadow-sm">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Live Preview</p>
-                <span className="rounded-full bg-[#e8f7ef] px-2 py-1 text-[10px] font-bold text-emerald-700">ACTIVE</span>
-              </div>
-
-              <div className="mb-3 grid grid-cols-3 gap-1 rounded-lg bg-slate-100 p-1 text-[11px] font-semibold">
-                <button
-                  onClick={() => setFocusMode('deep')}
-                  className={`rounded-md px-2 py-1.5 ${focusMode === 'deep' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
-                >
-                  Deep
-                </button>
-                <button
-                  onClick={() => setFocusMode('plan')}
-                  className={`rounded-md px-2 py-1.5 ${focusMode === 'plan' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
-                >
-                  Plan
-                </button>
-                <button
-                  onClick={() => setFocusMode('review')}
-                  className={`rounded-md px-2 py-1.5 ${focusMode === 'review' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
-                >
-                  Review
-                </button>
-              </div>
-
-              <div className={`rounded-xl p-4 ${focusCard.tone}`}>
-                <p className="text-sm font-bold">{focusCard.title}</p>
-                <p className="mt-1 text-xs opacity-90">{focusCard.value}</p>
-                <p className="mt-2 text-[11px] opacity-80">{focusCard.hint}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="focus" className="border-x-0 border-t-0 border-b border-[#d6def8] bg-white p-5 md:p-6">
-          <h2 className="text-center text-2xl font-black text-[#2f3a75] md:text-3xl">Escaping the Digital Chaos</h2>
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            <article className="rounded-xl border border-[#dde3fa] bg-[#f8f9ff] p-4">
-              <div className="mb-2 inline-flex rounded-lg bg-[#e9edff] p-2 text-[#5965a8]">
-                <Timer size={16} />
-              </div>
-              <h3 className="text-sm font-bold text-slate-800">No-Priority Tasks</h3>
-              <p className="mt-1 text-xs text-slate-600">Stop juggling random to-dos. Put your energy where it matters first.</p>
-            </article>
-
-            <article className="rounded-xl border border-[#dde3fa] bg-[#f8f9ff] p-4">
-              <div className="mb-2 inline-flex rounded-lg bg-[#e9edff] p-2 text-[#5965a8]">
-                <Shield size={16} />
-              </div>
-              <h3 className="text-sm font-bold text-slate-800">Your Focused Space</h3>
-              <p className="mt-1 text-xs text-slate-600">Daily planning, focused sessions, and review in one peaceful interface.</p>
-            </article>
-          </div>
-        </section>
-
-        <section className="border-x-0 border-t-0 border-b border-[#d6def8] bg-white p-5 md:p-6">
-          <h2 className="text-2xl font-black text-[#2f3a75] md:text-3xl">Designed for Deep Work</h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <article className="rounded-xl bg-[#eef1ff] p-4">
-              <p className="text-xs font-semibold text-[#5f6aad]">Intelligent Calendar</p>
-              <p className="mt-2 text-xs text-slate-600">See your study plan clearly day by day.</p>
-            </article>
-
-            <article className="rounded-xl bg-[#5965a8] p-4 text-white md:row-span-2">
-              <div className="inline-flex rounded-lg bg-white/20 p-2">
-                <Brain size={16} />
-              </div>
-              <h3 className="mt-3 text-lg font-bold">Deep Focus</h3>
-              <p className="mt-1 text-xs text-slate-200">Track live study sessions and build concentration streaks.</p>
-            </article>
-
-            <article className="rounded-xl bg-[#eef1ff] p-4">
-              <p className="text-xs font-semibold text-[#5f6aad]">Daily Reflections</p>
-              <p className="mt-2 text-xs text-slate-600">Capture what worked and what to improve tomorrow.</p>
-            </article>
-
-            <article className="rounded-xl bg-[#eef1ff] p-4 md:col-span-2">
-              <div className="flex items-center gap-2 text-[#5f6aad]">
-                <BarChart3 size={14} />
-                <span className="text-xs font-semibold">Seamless Clarity</span>
-              </div>
-              <p className="mt-2 text-xs text-slate-600">Your study metrics stay visible without noisy dashboards.</p>
-            </article>
-          </div>
-        </section>
-
-        <section id="reviews" className="border-b border-[#d6def8] bg-[#f4f6ff] p-5 md:p-6">
-          <h2 className="text-center text-lg font-bold text-[#2f3a75]">Loved by high-achievers</h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <article className="rounded-xl border border-[#d6def8] bg-white p-4">
-              <Quote size={14} className="text-[#7b88c5]" />
-              <p className="mt-2 text-xs text-slate-600">I finally know where my time goes every day. Super clean and useful.</p>
-              <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
-                <CheckCircle2 size={13} className="text-emerald-600" />
-                Priya
-              </div>
-            </article>
-
-            <article className="rounded-xl border border-[#d6def8] bg-white p-4">
-              <Quote size={14} className="text-[#7b88c5]" />
-              <p className="mt-2 text-xs text-slate-600">The deep focus and review combo helped me stay consistent for exams.</p>
-              <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
-                <CheckCircle2 size={13} className="text-emerald-600" />
-                Arjun
-              </div>
-            </article>
-
-            <article className="rounded-xl border border-[#d6def8] bg-white p-4">
-              <Quote size={14} className="text-[#7b88c5]" />
-              <p className="mt-2 text-xs text-slate-600">Simple UI, strong structure. Exactly what I needed before test season.</p>
-              <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
-                <CheckCircle2 size={13} className="text-emerald-600" />
-                Neha
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section className="rounded-none bg-[#505b99] px-5 py-9 text-center text-white md:px-8">
-          <h3 className="text-3xl font-black">Ready to find your focus?</h3>
-          <p className="mx-auto mt-2 max-w-lg text-sm text-slate-200">Join students who plan smart, track better, and improve every day.</p>
-          <div className="mt-5 flex items-center justify-center gap-3">
+          <div className="flex items-center gap-3">
             <button
               onClick={onGetStarted}
-              className="rounded-full bg-white px-5 py-2.5 text-xs font-bold text-[#4a5593] transition-colors hover:bg-slate-100"
+              className="rounded-full border border-pink-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-pink-300 hover:shadow"
             >
-              Get Your Tracker
+              Login
             </button>
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold">
-              <BookOpen size={14} />
-              Built for students
-            </span>
+            <button
+              onClick={onGetStarted}
+              className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(to_right,_#f58fcb,_#9ea9ef)] px-5 py-2 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+            >
+              Get Started
+              <ArrowRight size={15} />
+            </button>
           </div>
-        </section>
+        </div>
+      </header>
+
+      <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 pb-14 pt-10 md:grid-cols-2 md:px-8 md:pt-14">
+        <div className="space-y-6">
+          <p className="inline-flex items-center gap-2 rounded-full border border-pink-200 bg-white/70 px-3 py-1 text-xs font-semibold tracking-wide text-pink-700">
+            <Sparkles size={14} />
+            Calm Productivity for Students
+          </p>
+
+          <h1 className="text-4xl font-black leading-tight text-slate-900 md:text-5xl">
+            Plan Better. Learn Smarter. Improve Daily.
+          </h1>
+
+          <p className="max-w-xl text-base leading-relaxed text-slate-600 md:text-lg">
+            Students Tracker helps you plan your day, track your progress, reflect on your learning, and grow consistently with AI-powered insights.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={onGetStarted}
+              className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(to_right,_#f58fcb,_#9ea9ef)] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+            >
+              Get Started
+              <ArrowRight size={16} />
+            </button>
+            <button className="rounded-full border border-pink-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-pink-300 hover:shadow">
+              Try Demo
+            </button>
+          </div>
+        </div>
+
+        <div className="relative">
+          <div className="absolute -inset-3 rounded-3xl bg-[linear-gradient(to_right,_#fbc2eb55,_#a6c1ee55)] blur-2xl" />
+          <div className="relative rounded-3xl border border-white/70 bg-white/85 p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-700">Dashboard Preview</h3>
+              <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">Live</span>
+            </div>
+
+            <div className="space-y-3">
+              <div className="rounded-xl bg-pink-50 p-3">
+                <p className="text-xs font-semibold text-pink-700">Today&apos;s Goal</p>
+                <p className="text-sm text-slate-700">3 Topics + 2 Practice Sets</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-indigo-50 p-3">
+                  <p className="text-xs text-slate-500">Study Time</p>
+                  <p className="text-lg font-bold text-slate-800">4.5h</p>
+                </div>
+                <div className="rounded-xl bg-purple-50 p-3">
+                  <p className="text-xs text-slate-500">Consistency</p>
+                  <p className="text-lg font-bold text-slate-800">87%</p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-100 p-3">
+                <p className="mb-2 text-xs text-slate-500">Weekly Progress</p>
+                <div className="flex items-end gap-1.5">
+                  {[35, 48, 62, 58, 76, 85, 91].map((h, idx) => (
+                    <div
+                      key={idx}
+                      className="w-full rounded-t-md bg-[linear-gradient(to_top,_#f58fcb,_#9ea9ef)]"
+                      style={{ height: `${h}px` }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 md:px-8">
+        <h2 className="mb-8 text-center text-3xl font-black text-slate-900">Why Students Tracker?</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {[
+            { icon: CheckCircle2, text: 'Stay consistent with daily planning' },
+            { icon: Clock3, text: 'Track your study hours easily' },
+            { icon: BookOpen, text: 'Reflect and learn from your day' },
+            { icon: Brain, text: 'Get AI-powered improvement suggestions' },
+            { icon: MessageSquare, text: 'Receive meaningful mentor feedback' },
+          ].map((item) => (
+            <article
+              key={item.text}
+              className="rounded-2xl border border-pink-100 bg-white/80 p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+            >
+              <item.icon className="mb-3 text-pink-600" size={20} />
+              <p className="text-sm leading-relaxed text-slate-700">{item.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 md:px-8">
+        <h2 className="mb-8 text-center text-3xl font-black text-slate-900">How It Works</h2>
+        <div className="grid gap-4 md:grid-cols-5">
+          {[
+            { icon: Calendar, title: 'Plan your daily goals' },
+            { icon: Clock3, title: 'Track your time and progress' },
+            { icon: BookOpen, title: 'Write reflections and challenges' },
+            { icon: Sparkles, title: 'Get AI insights for improvement' },
+            { icon: Users, title: 'Receive feedback from mentors' },
+          ].map((step, index) => (
+            <article
+              key={step.title}
+              className="relative rounded-2xl border border-purple-100 bg-white/85 p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+            >
+              <span className="mb-3 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[linear-gradient(to_right,_#f58fcb,_#9ea9ef)] text-xs font-bold text-white">
+                {index + 1}
+              </span>
+              <step.icon className="mb-2 text-purple-600" size={18} />
+              <p className="text-sm font-medium text-slate-700">{step.title}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 md:px-8">
+        <h2 className="mb-8 text-center text-3xl font-black text-slate-900">Powerful Features</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[
+            {
+              icon: Calendar,
+              title: 'Daily Planning',
+              desc: 'Plan and organize your goals with a simple calendar',
+            },
+            {
+              icon: Clock3,
+              title: 'Time Tracking',
+              desc: 'Track your study hours with timer and logs',
+            },
+            {
+              icon: Brain,
+              title: 'AI Feedback',
+              desc: 'Get smart suggestions to improve consistency',
+            },
+            {
+              icon: BarChart3,
+              title: 'Dashboard',
+              desc: 'Visualize your progress with charts and insights',
+            },
+            {
+              icon: GraduationCap,
+              title: 'Mentor Support',
+              desc: 'Get personalized feedback from mentors',
+            },
+          ].map((feature) => (
+            <article
+              key={feature.title}
+              className="rounded-2xl border border-pink-100 bg-white/85 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+            >
+              <feature.icon className="mb-3 text-pink-600" size={22} />
+              <h3 className="mb-1 text-base font-bold text-slate-800">{feature.title}</h3>
+              <p className="text-sm leading-relaxed text-slate-600">{feature.desc}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-10 md:px-8">
+        <div className="grid gap-4 rounded-3xl border border-purple-100 bg-white/85 p-6 shadow-sm md:grid-cols-2 md:p-8">
+          <div>
+            <h2 className="mb-4 text-2xl font-black text-slate-900">Built for Students and Mentors</h2>
+            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-pink-700">Students</h3>
+            <ul className="space-y-2 text-sm text-slate-700">
+              <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-pink-600" />Plan daily learning</li>
+              <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-pink-600" />Track progress</li>
+              <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-pink-600" />Improve with AI</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-purple-700">Mentors</h3>
+            <ul className="space-y-2 text-sm text-slate-700">
+              <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-purple-600" />Monitor student progress</li>
+              <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-purple-600" />Give targeted feedback</li>
+              <li className="flex items-center gap-2"><CheckCircle2 size={16} className="text-purple-600" />Support better outcomes</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-6 w-full bg-[linear-gradient(to_right,_#fbc2eb,_#a6c1ee)] px-4 py-14 text-center md:px-8">
+        <h2 className="mx-auto max-w-3xl text-2xl font-black text-slate-900 md:text-3xl">
+          Start your journey towards better learning and consistency today.
+        </h2>
+        <button
+          onClick={onGetStarted}
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-slate-800 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+        >
+          Get Started Now 🚀
+          <ArrowRight size={16} />
+        </button>
+      </section>
+
+      <footer className="px-4 py-6 text-center text-sm text-slate-600 md:px-8">
+        Built to make learning simple, structured, and effective.
+      </footer>
     </main>
   );
 }
