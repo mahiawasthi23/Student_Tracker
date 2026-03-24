@@ -2,8 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Mail, Calendar, User, MessageCircle, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { useProgress } from '../context/ProgressContext';
 
-export function FeedbackPage({ onBack }) {
-  const { getStudentFeedback, markFeedbackAsSeen, getAiFeedback, isAuthenticated } = useProgress();
+export function FeedbackPage({ onBack, mentorStudentId = '' }) {
+  const {
+    getStudentFeedback,
+    markFeedbackAsSeen,
+    getAiFeedback,
+    getMentorStudentFeedback,
+    getMentorStudentAiFeedback,
+    isAuthenticated,
+  } = useProgress();
   const [mentorFeedback, setMentorFeedback] = useState([]);
   const [aiFeedback, setAiFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,6 +19,7 @@ export function FeedbackPage({ onBack }) {
   const [aiPage, setAiPage] = useState(1);
   const mentorItemsPerPage = 6;
   const aiItemsPerPage = 1;
+  const isMentorViewingStudent = Boolean(mentorStudentId);
 
   useEffect(() => {
     // Only load if authenticated
@@ -26,8 +34,8 @@ export function FeedbackPage({ onBack }) {
         setLoading(true);
         setError('');
         const [mentorData, aiData] = await Promise.all([
-          getStudentFeedback(),
-          getAiFeedback(),
+          isMentorViewingStudent ? getMentorStudentFeedback(mentorStudentId) : getStudentFeedback(),
+          isMentorViewingStudent ? getMentorStudentAiFeedback(mentorStudentId) : getAiFeedback(),
         ]);
 
         setMentorFeedback(mentorData);
@@ -46,12 +54,14 @@ export function FeedbackPage({ onBack }) {
         setAiPage(1);
 
         // Mark all feedback as seen
-        for (const item of mentorData) {
-          if (!item.seen) {
-            try {
-              await markFeedbackAsSeen(item._id);
-            } catch (err) {
-              console.error('Failed to mark feedback as seen:', err);
+        if (!isMentorViewingStudent) {
+          for (const item of mentorData) {
+            if (!item.seen) {
+              try {
+                await markFeedbackAsSeen(item._id);
+              } catch (err) {
+                console.error('Failed to mark feedback as seen:', err);
+              }
             }
           }
         }
@@ -63,7 +73,16 @@ export function FeedbackPage({ onBack }) {
     };
 
     loadFeedback();
-  }, [isAuthenticated, getStudentFeedback, getAiFeedback, markFeedbackAsSeen]);
+  }, [
+    isAuthenticated,
+    mentorStudentId,
+    isMentorViewingStudent,
+    getStudentFeedback,
+    getAiFeedback,
+    getMentorStudentFeedback,
+    getMentorStudentAiFeedback,
+    markFeedbackAsSeen,
+  ]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);

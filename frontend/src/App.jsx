@@ -184,7 +184,10 @@ function App() {
             />
           </>
         ) : view === 'feedback' ? (
-          <FeedbackPage onBack={() => setView('dashboard')} />
+          <FeedbackPage
+            onBack={() => setView('dashboard')}
+            mentorStudentId={isMentorViewingStudent ? mentorViewingStudent?.student?.id || '' : ''}
+          />
         ) : null}
       </Layout>
       <ProfileSetupModal

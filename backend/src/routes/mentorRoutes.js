@@ -2,6 +2,8 @@ const express = require("express");
 
 const User = require("../models/User");
 const ProgressDay = require("../models/ProgressDay");
+const Feedback = require("../models/Feedback");
+const AiFeedback = require("../models/AiFeedback");
 const { toFrontendState } = require("../utils/stateMapper");
 const { buildStreakStats } = require("../utils/streak");
 
@@ -19,6 +21,34 @@ function requireMentor(req, res, next) {
   }
 
   return next();
+}
+
+async function getAuthorizedStudentForMentor(req, res) {
+  const campus = String(req.auth.user.campus || "").trim();
+  const studentId = String(req.params.studentId || "").trim();
+
+  if (!studentId) {
+    res.status(400).json({ message: "Student id is required." });
+    return null;
+  }
+
+  const student = await User.findById(studentId);
+  if (!student) {
+    res.status(404).json({ message: "Student not found." });
+    return null;
+  }
+
+  if (String(student.role || "").trim().toLowerCase() !== "student") {
+    res.status(400).json({ message: "Selected user is not a student." });
+    return null;
+  }
+
+  if (String(student.campus || "").trim() !== campus) {
+    res.status(403).json({ message: "You can only view students from your campus." });
+    return null;
+  }
+
+  return student;
 }
 
 router.get("/students", requireMentor, async (req, res) => {
@@ -45,24 +75,9 @@ router.get("/students", requireMentor, async (req, res) => {
 });
 
 router.get("/students/:studentId/state", requireMentor, async (req, res) => {
-  const campus = String(req.auth.user.campus || "").trim();
-  const studentId = String(req.params.studentId || "").trim();
-
-  if (!studentId) {
-    return res.status(400).json({ message: "Student id is required." });
-  }
-
-  const student = await User.findById(studentId);
+  const student = await getAuthorizedStudentForMentor(req, res);
   if (!student) {
-    return res.status(404).json({ message: "Student not found." });
-  }
-
-  if (String(student.role || "").trim().toLowerCase() !== "student") {
-    return res.status(400).json({ message: "Selected user is not a student." });
-  }
-
-  if (String(student.campus || "").trim() !== campus) {
-    return res.status(403).json({ message: "You can only view students from your campus." });
+    return;
   }
 
   const days = await ProgressDay.find({ user: student._id }).sort({ dateKey: 1 }).lean();
@@ -81,6 +96,35 @@ router.get("/students/:studentId/state", requireMentor, async (req, res) => {
     reflections,
     streak,
   });
+});
+
+router.get("/students/:studentId/feedback", requireMentor, async (req, res) => {
+  const student = await getAuthorizedStudentForMentor(req, res);
+  if (!student) {
+    return;
+  }
+
+  const feedback = await Feedback.find({ student: student._id })
+    .sort({ createdAt: -1 })
+    .populate("mentor", "name email")
+    .select("-__v")
+    .lean();
+
+  return res.json(feedback);
+});
+
+router.get("/students/:studentId/ai-feedback", requireMentor, async (req, res) => {
+  const student = await getAuthorizedStudentForMentor(req, res);
+  if (!student) {
+    return;
+  }
+
+  const aiFeedback = await AiFeedback.find({ user: student._id })
+    .sort({ dateKey: -1, createdAt: -1 })
+    .select("-__v")
+    .lean();
+
+  return res.json(aiFeedback);
 });
 
 module.exports = router;

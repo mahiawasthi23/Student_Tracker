@@ -212,6 +212,50 @@ export const ProgressProvider = ({ children }) => {
     return data;
   };
 
+  const getMentorStudentFeedback = async (studentId) => {
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!authToken) {
+      throw new Error('Authentication required.');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/mentor/students/${studentId}/feedback`, {
+      cache: 'no-store',
+      headers: {
+        ...getAuthHeaders(),
+        'Cache-Control': 'no-cache',
+      },
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch student feedback.');
+    }
+
+    return data;
+  };
+
+  const getMentorStudentAiFeedback = async (studentId) => {
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!authToken) {
+      throw new Error('Authentication required.');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/mentor/students/${studentId}/ai-feedback`, {
+      cache: 'no-store',
+      headers: {
+        ...getAuthHeaders(),
+        'Cache-Control': 'no-cache',
+      },
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch student AI feedback.');
+    }
+
+    return data;
+  };
+
   const logout = () => {
     persistToken('');
     setIsAuthenticated(false);
@@ -462,6 +506,8 @@ export const ProgressProvider = ({ children }) => {
       completeProfileSetup,
       getMentorStudents,
       getMentorStudentState,
+      getMentorStudentFeedback,
+      getMentorStudentAiFeedback,
       getStudentFeedback,
       getUnseenFeedbackCount,
       markFeedbackAsSeen,
