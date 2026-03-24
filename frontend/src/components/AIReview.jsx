@@ -10,7 +10,7 @@ import { FeedbackCard } from './FeedbackCard';
 const AI_WINDOW_START_MINUTES = 20 * 60 + 30; // 8:30 PM
 const AI_WINDOW_END_MINUTES = 24 * 60; // 12:00 AM
 
-export function AIReview({ goals: goalsOverride, reflections: reflectionsOverride }) {
+export function AIReview({ goals: goalsOverride, reflections: reflectionsOverride, readOnly = false }) {
   const progress = useProgress();
   const goals = goalsOverride || progress.goals;
   const reflections = reflectionsOverride || progress.reflections;
@@ -22,7 +22,7 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
   });
   
   const [geminiKey, setGeminiKey] = useLocalStorage('gemini_api_key', '');
-  const [isEditingKey, setIsEditingKey] = useState(!geminiKey);
+  const [isEditingKey, setIsEditingKey] = useState(!geminiKey && !readOnly);
   const [keyInput, setKeyInput] = useState(geminiKey || '');
 
   const [aiFeedback, setAiFeedback] = useState(null);
@@ -99,6 +99,10 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
   };
 
   const generateAiFeedback = async () => {
+    if (readOnly) {
+      return;
+    }
+
     if (!isWithinAiWindow) {
       setError('AI feedback can be generated only between 8:30 PM and 12:00 AM.');
       return;
@@ -274,7 +278,7 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
       </div>
 
       {/* Main Content */}
-      {isEditingKey ? (
+      {isEditingKey && !readOnly ? (
         // API Key Setup
         <div className="bg-gradient-to-br from-white via-purple-50/20 to-pink-50/20 rounded-3xl border border-pink-200/60 shadow-xl p-10 max-w-2xl mx-auto text-center flex flex-col items-center backdrop-blur-sm">
           <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center text-purple-600 mb-6">
@@ -319,9 +323,9 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
           {/* Generate Button */}
           <div className="flex justify-between items-center gap-4">
             <h3 className="text-lg font-semibold text-slate-700">
-              {aiFeedback ? 'Your Personalized Feedback' : 'Generate AI Feedback'}
-            </h3>
-            <div className="flex gap-2">
+                {readOnly ? 'Student AI Feedback (Read-only)' : aiFeedback ? 'Your Personalized Feedback' : 'Generate AI Feedback'}
+              </h3>
+              {!readOnly && <div className="flex gap-2">
               {!aiFeedback && (
                 <button 
                   onClick={generateAiFeedback}
@@ -344,10 +348,10 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
                 <Key size={18} />
                 {geminiKey && aiFeedback ? 'Change Key' : 'API Key'}
               </button>
+            </div>}
             </div>
-          </div>
 
-          {lockMessage && !isGenerating && (
+          {lockMessage && !isGenerating && !readOnly && (
             <div className={`rounded-xl border px-4 py-3 text-sm font-semibold ${hasGeneratedToday ? 'border-emerald-200/60 bg-gradient-to-r from-emerald-50 to-teal-50/30 text-emerald-700' : 'border-amber-200/60 bg-gradient-to-r from-amber-50 to-yellow-50/30 text-amber-700'}`}>
               {lockMessage}
             </div>
@@ -394,18 +398,24 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
               <div className="w-24 h-24 mx-auto mb-6 bg-white rounded-full flex items-center justify-center shadow-md">
                 <Sparkles size={40} className="text-indigo-600 opacity-60" />
               </div>
-              <h4 className="text-xl font-bold text-slate-800 mb-2">Ready for AI Feedback?</h4>
+              <h4 className="text-xl font-bold text-slate-800 mb-2">
+                {readOnly ? 'No AI Feedback Found' : 'Ready for AI Feedback?'}
+              </h4>
               <p className="text-slate-600 max-w-lg mx-auto mb-6">
-                Click "Generate Feedback" to get personalized AI insights based on your study patterns, goals completed, and how close you are to the 8-hour daily benchmark.
+                {readOnly
+                  ? 'This student has no AI feedback entries yet.'
+                  : 'Click "Generate Feedback" to get personalized AI insights based on your study patterns, goals completed, and how close you are to the 8-hour daily benchmark.'}
               </p>
-              <button 
-                onClick={generateAiFeedback}
-                disabled={generationLocked}
-                className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg transition-all inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <Sparkles size={20} />
-                {generationLocked ? 'Generation Locked' : 'Get Started'}
-              </button>
+              {!readOnly && (
+                <button 
+                  onClick={generateAiFeedback}
+                  disabled={generationLocked}
+                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg transition-all inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <Sparkles size={20} />
+                  {generationLocked ? 'Generation Locked' : 'Get Started'}
+                </button>
+              )}
             </div>
           )}
         </div>

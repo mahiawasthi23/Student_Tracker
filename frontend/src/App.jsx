@@ -181,6 +181,7 @@ function App() {
             <AIReview
               goals={studentState?.goals}
               reflections={studentState?.reflections}
+              readOnly={isMentorViewingStudent}
             />
           </>
         ) : view === 'feedback' ? (
