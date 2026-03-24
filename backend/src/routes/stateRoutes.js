@@ -46,15 +46,19 @@ router.put("/", async (req, res) => {
     const reflectionGoals = Array.isArray(dayReflection.goals) ? dayReflection.goals : [];
     const reflectionExtra = dayReflection.extra || {};
 
+    const normalizedGoals = dayGoals
+      .map((goal) => ({
+        id: String(goal?.id || Date.now()),
+        text: String(goal?.text || "").trim(),
+      }))
+      .filter((goal) => goal.text.length > 0);
+
     await ProgressDay.findOneAndUpdate(
       { user: userId, dateKey },
       {
         $set: {
           user: userId,
-          goals: dayGoals.map((goal) => ({
-            id: String(goal.id),
-            text: String(goal.text || ""),
-          })),
+          goals: normalizedGoals,
           reflection: {
             goals: reflectionGoals.map((goal) => ({
               goalId: String(goal.goalId),
@@ -70,7 +74,7 @@ router.put("/", async (req, res) => {
           submitted: Boolean(dayReflection.submitted),
         },
       },
-      { upsert: true, new: true, runValidators: true }
+      { upsert: true, returnDocument: "after", runValidators: true }
     );
   }
 

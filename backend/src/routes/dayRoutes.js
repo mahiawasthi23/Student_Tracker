@@ -38,20 +38,29 @@ router.put("/:dateKey", async (req, res) => {
   const goals = Array.isArray(payload.goals) ? payload.goals : [];
   const reflection = payload.reflection || {};
   const reflectionGoals = Array.isArray(reflection.goals) ? reflection.goals : [];
+  const reflectionChallenge = String(reflection.challenge || "");
   const reflectionExtra = reflection.extra || {};
+
+  const normalizedGoals = goals
+    .map((goal) => ({
+      id: String(goal?.id || Date.now()),
+      text: String(goal?.text || "").trim(),
+    }))
+    .filter((goal) => goal.text.length > 0);
 
   const day = await ProgressDay.findOneAndUpdate(
     { user: userId, dateKey },
     {
       $set: {
         user: userId,
-        goals: goals.map((goal) => ({ id: String(goal.id), text: String(goal.text || "") })),
+        goals: normalizedGoals,
         reflection: {
           goals: reflectionGoals.map((goal) => ({
             goalId: String(goal.goalId),
             text: String(goal.text || ""),
             hours: Number(goal.hours || 0),
           })),
+          challenge: reflectionChallenge,
           extra: {
             text: String(reflectionExtra.text || ""),
             hours: Number(reflectionExtra.hours || 0),
@@ -60,7 +69,7 @@ router.put("/:dateKey", async (req, res) => {
         submitted: Boolean(payload.submitted),
       },
     },
-    { new: true, upsert: true, runValidators: true }
+    { returnDocument: "after", upsert: true, runValidators: true }
   );
 
   return res.json({ day });
