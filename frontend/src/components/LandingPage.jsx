@@ -70,43 +70,15 @@ export function LandingPage({ onGetStarted }) {
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative w-full max-w-[560px] md:ml-auto">
           <div className="absolute -inset-3 rounded-3xl bg-[linear-gradient(to_right,_#fbc2eb55,_#a6c1ee55)] blur-2xl" />
-          <div className="relative rounded-3xl border border-white/70 bg-white/85 p-5 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-700">Dashboard Preview</h3>
-              <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">Live</span>
-            </div>
-
-            <div className="space-y-3">
-              <div className="rounded-xl bg-pink-50 p-3">
-                <p className="text-xs font-semibold text-pink-700">Today&apos;s Goal</p>
-                <p className="text-sm text-slate-700">3 Topics + 2 Practice Sets</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-indigo-50 p-3">
-                  <p className="text-xs text-slate-500">Study Time</p>
-                  <p className="text-lg font-bold text-slate-800">4.5h</p>
-                </div>
-                <div className="rounded-xl bg-purple-50 p-3">
-                  <p className="text-xs text-slate-500">Consistency</p>
-                  <p className="text-lg font-bold text-slate-800">87%</p>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-100 p-3">
-                <p className="mb-2 text-xs text-slate-500">Weekly Progress</p>
-                <div className="flex items-end gap-1.5">
-                  {[35, 48, 62, 58, 76, 85, 91].map((h, idx) => (
-                    <div
-                      key={idx}
-                      className="w-full rounded-t-md bg-[linear-gradient(to_top,_#f58fcb,_#9ea9ef)]"
-                      style={{ height: `${h}px` }}
-                    />
-                  ))}
-                </div>
-              </div>
+          <div className="relative rounded-3xl border border-white/70 bg-white/85 p-1 shadow-xl">
+            <div className="aspect-[885/767] w-full overflow-hidden rounded-2xl border border-pink-100/60 bg-white">
+              <img
+                src="/dhashbord.png"
+                alt="Dashboard screenshot"
+                className="h-full w-full rounded-2xl object-contain"
+              />
             </div>
           </div>
         </div>
