@@ -216,7 +216,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
         audio.volume = 0.25;
         audio.play().catch(() => {});
       } catch {
-        // Ignore audio playback failures (autoplay/device restrictions).
+        
       }
 
       if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
@@ -271,7 +271,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
 
         setAiAlertMessages((prev) => ({ ...prev, ...parsed }));
       } catch {
-        // Keep fallback base messages if AI generation fails.
+        
       }
     };
 
@@ -294,7 +294,7 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
         }}
       />
       
-      {/* Header & Filters */}
+      
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900">Your Dashboard</h2>
@@ -333,7 +333,6 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4 w-full">
         <StatsCard 
           title="Total Hours" 
@@ -424,7 +423,6 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chart */}
         <div className="lg:col-span-2 bg-gradient-to-br from-white via-slate-50/50 to-slate-50/20 p-6 rounded-3xl border border-slate-200/60 shadow-sm backdrop-blur flex flex-col min-h-[400px]">
           <div className="flex items-center justify-between mb-8">
             <h3 className="font-bold text-slate-800 text-lg">Hours by Day</h3>
@@ -463,7 +461,6 @@ export function Dashboard({ setView, goals: goalsOverride, reflections: reflecti
           </div>
         </div>
 
-        {/* Call to action for new AI Review page */}
         <div className="bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-700 p-8 rounded-3xl shadow-lg shadow-indigo-200 text-white flex flex-col justify-center items-center text-center relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-400/20 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none group-hover:scale-110 transition-transform duration-700"></div>

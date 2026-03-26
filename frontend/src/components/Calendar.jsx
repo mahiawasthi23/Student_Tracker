@@ -108,7 +108,6 @@ export function Calendar({ onDateSelect, goals: goalsOverride, reflections: refl
         </div>
       )}
 
-      {/* Grid Header */}
       <div className="grid grid-cols-7 border-b border-pink-100/80 bg-[linear-gradient(to_right,_rgba(251,194,235,0.2),_rgba(166,193,238,0.2))]">
         {weekDays.map(day => (
           <div key={day} className="py-2.5 text-center text-[10px] sm:text-[11px] font-bold text-slate-600 uppercase tracking-[0.12em]">
@@ -117,7 +116,6 @@ export function Calendar({ onDateSelect, goals: goalsOverride, reflections: refl
         ))}
       </div>
 
-      {/* Grid Body */}
       <div className="grid grid-cols-7 gap-2 p-2 sm:gap-2.5 sm:p-2.5 bg-white/70 auto-rows-fr animate-in fade-in zoom-in-95 duration-300">
         {days.map((day, idx) => {
           const dateKey = formatDateKey(day);

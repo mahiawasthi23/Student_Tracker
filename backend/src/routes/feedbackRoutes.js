@@ -4,7 +4,7 @@ const { requireAuth } = require('../middleware/requireAuth');
 
 const router = express.Router();
 
-// Get unseen feedback count for student (MUST BE BEFORE GENERIC GET /)
+
 router.get('/count/unseen', requireAuth, async (req, res) => {
   try {
     const studentId = req.auth.userId;
@@ -19,7 +19,7 @@ router.get('/count/unseen', requireAuth, async (req, res) => {
   }
 });
 
-// Get all feedback for logged-in student (GENERIC - COMES AFTER SPECIFIC)
+
 router.get('/', requireAuth, async (req, res) => {
   try {
     const studentId = req.auth.userId;
@@ -39,7 +39,7 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// Mentor sends feedback to a student
+
 router.post('/', requireAuth, async (req, res) => {
   const { studentId, text } = req.body;
   const mentorId = req.auth.userId;
@@ -69,7 +69,7 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// Mark feedback as seen
+
 router.patch('/:feedbackId/seen', requireAuth, async (req, res) => {
   const { feedbackId } = req.params;
   const studentId = req.auth.userId;

@@ -10,7 +10,6 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
   const appPanelTitle = isMentor ? 'Mentor Dashboard' : 'Student Dashboard';
 
   useEffect(() => {
-    // Only fetch for authenticated students, not for mentors
     if (!isAuthenticated || !canAccessStudentSections) {
       return;
     }
@@ -26,7 +25,6 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
     };
 
     checkUnseenFeedback();
-    // Check every 10 seconds for new feedback
     const interval = setInterval(checkUnseenFeedback, 10000);
 
     return () => clearInterval(interval);
@@ -34,7 +32,6 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-pink-50/30 to-slate-100 flex flex-col">
-      {/* Global Top Navbar */}
       <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-pink-100/50 shadow-sm m-0 px-4 md:px-8 md:h-[68px] md:flex md:items-center min-h-[68px]">
         <div className="w-full flex items-center justify-between md:h-full">
           <div className="flex items-center gap-3">
@@ -44,7 +41,6 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
           <span className="text-lg md:text-xl font-black bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">{appPanelTitle}</span>
         </div>
 
-        {/* Mobile Navigation */}
         <div className="md:hidden flex items-center justify-between gap-2 w-full mt-2">
           <div className="flex gap-1 bg-gradient-to-r from-slate-100 to-slate-50 p-1.5 rounded-xl flex-grow">
             {canAccessStudentSections && (
@@ -109,7 +105,6 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
       </header>
 
       <div className="flex flex-1 min-h-0 relative">
-        {/* Sidebar - Fixed */}
         <aside className="fixed left-0 top-[68px] h-[calc(100vh-68px)] w-72 bg-gradient-to-b from-white/90 via-pink-50/40 to-purple-50/40 border-r border-pink-100/50 flex flex-col p-6 hidden md:flex backdrop-blur-sm shadow-sm overflow-y-auto z-30">
           <div className="mb-8">
             <div className="flex items-center gap-3">
@@ -214,9 +209,7 @@ export function Layout({ children, view, setView, userName, userRole, userCampus
           </div>
         </aside>
 
-        {/* Main Content Area */}
         <main className="flex-1 md:ml-72 flex flex-col min-w-0 overflow-hidden">
-          {/* Dynamic Content */}
           <div className="flex-1 overflow-y-auto p-4 md:p-8">
             <div className="mx-auto w-full max-w-6xl min-h-[500px]">
               {children}

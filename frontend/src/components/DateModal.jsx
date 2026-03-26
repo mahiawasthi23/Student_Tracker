@@ -3,7 +3,6 @@ import { X, Plus, Edit2, Trash2, Check, Play, Square, Save, Lock, Clock, Message
 import { getDisplayDate } from '../utils/dateUtils';
 import { useProgress } from '../context/ProgressContext';
 
-// --- Inline Timer Component ---
 const Timer = ({ value, onChange, disabled }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [seconds, setSeconds] = useState((value || 0) * 3600);
@@ -64,7 +63,7 @@ const Timer = ({ value, onChange, disabled }) => {
   );
 };
 
-// --- Goal Item Component ---
+
 const GoalItem = ({ goal, dateKey, updateGoal, deleteGoal, dayReflection, updateReflection, isSubmitted }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(goal.text);
@@ -159,7 +158,7 @@ const GoalItem = ({ goal, dateKey, updateGoal, deleteGoal, dayReflection, update
   );
 };
 
-// --- Main Modal Component ---
+
 export function DateModal({ date, dateKey, onClose, readOnly = false, goals: goalsOverride, reflections: reflectionsOverride }) {
   const progress = useProgress();
   const goals = goalsOverride || progress.goals;
@@ -205,7 +204,7 @@ export function DateModal({ date, dateKey, onClose, readOnly = false, goals: goa
 
       <div className="bg-[#f8fafc] rounded-2xl shadow-2xl w-full max-w-2xl h-[85vh] flex flex-col relative z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Header */}
+      
         <div className="px-6 py-4 border-b border-slate-100 bg-white flex items-center justify-between shrink-0">
           <h2 className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
             {getDisplayDate(date)}
@@ -220,10 +219,8 @@ export function DateModal({ date, dateKey, onClose, readOnly = false, goals: goa
           </button>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8">
           
-          {/* Goals Section */}
           <section>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Today's Goals</h3>
@@ -274,7 +271,6 @@ export function DateModal({ date, dateKey, onClose, readOnly = false, goals: goa
             </div>
           </section>
 
-          {/* Challenges Faced */}
           <section className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2">
               <MessageSquare size={16} className="text-rose-500" /> You Faced Any Challenges?
@@ -291,7 +287,6 @@ export function DateModal({ date, dateKey, onClose, readOnly = false, goals: goa
             />
           </section>
 
-          {/* Extra / End of Day Summary */}
           <section className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
               <MessageSquare size={16} className="text-indigo-500" /> End of Day Summary
@@ -309,7 +304,6 @@ export function DateModal({ date, dateKey, onClose, readOnly = false, goals: goa
             />
           </section>
 
-          {/* Submit Button Section */}
           {!isLocked && dayGoals.length > 0 && (
             <div className="pt-2 pb-6 flex justify-end">
               <button

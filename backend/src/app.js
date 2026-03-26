@@ -13,7 +13,7 @@ const { requireAuth } = require("./middleware/requireAuth");
 
 const app = express();
 
-// Disable ETag so API responses do not return 304 for auth/state endpoints.
+
 app.set("etag", false);
 
 const normalizeOrigin = (origin = "") => origin.trim().replace(/\/+$/, "");
@@ -27,7 +27,6 @@ const allowList = rawOrigins
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow non-browser requests and keep local dev open if no allow-list is configured.
       if (!origin || !allowList.length) {
         callback(null, true);
         return;

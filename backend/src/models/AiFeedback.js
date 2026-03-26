@@ -21,13 +21,13 @@ const aiFeedbackSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// One AI feedback entry per user per day.
+
 aiFeedbackSchema.index({ user: 1, dateKey: 1 }, { unique: true });
 
-// Fast listing by most recent.
+
 aiFeedbackSchema.index({ user: 1, createdAt: -1 });
 
-// Auto-delete records older than 10 days.
+
 aiFeedbackSchema.index(
   { createdAt: 1 },
   {

@@ -5,7 +5,7 @@ export function DayCell({ day, currentMonth, dateKey, dayGoals = [], dayReflecti
   const isCurrentMonth = isSameMonth(day, currentMonth);
   const isCurrentDay = isToday(day);
 
-  // Determine if there's any reflection for this day
+  
   const hasReflection = (dayReflection.goals && dayReflection.goals.length > 0) || 
                         (dayReflection.extra && dayReflection.extra.text);
 

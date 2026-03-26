@@ -6,7 +6,7 @@ export function UserModal() {
   const { user, setUser } = useProgress();
   const [nameInput, setNameInput] = useState('');
 
-  if (user?.name) return null; // Don't show if already set
+  if (user?.name) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();

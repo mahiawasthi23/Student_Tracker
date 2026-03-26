@@ -7,8 +7,8 @@ import { buildProgressStats } from '../utils/progressStats';
 import { buildAiFeedbackPrompt } from '../utils/aiPromptBuilder';
 import { FeedbackCard } from './FeedbackCard';
 
-const AI_WINDOW_START_MINUTES = 20 * 60 + 30; // 8:30 PM
-const AI_WINDOW_END_MINUTES = 24 * 60; // 12:00 AM
+const AI_WINDOW_START_MINUTES = 20 * 60 + 30;
+const AI_WINDOW_END_MINUTES = 24 * 60;
 
 export function AIReview({ goals: goalsOverride, reflections: reflectionsOverride, readOnly = false }) {
   const progress = useProgress();
@@ -175,14 +175,14 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
 
       if (!textResponse) throw new Error('Invalid response from Gemini.');
 
-      // Clean response
+  
       let cleanedText = textResponse
         .replace(/^```json/g, '')
         .replace(/^```/g, '')
         .replace(/```$/g, '')
         .trim();
 
-      // Try to extract JSON if there's extra text
+      
       const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         cleanedText = jsonMatch[0];
@@ -196,7 +196,7 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
         throw new Error('AI response was incomplete. Please try again.');
       }
 
-      // Validate all required fields exist
+     
       const defaultFeedback = {
         productivity: ['Visit your dashboard for details'],
         consistency: ['Keep logging daily'],
@@ -208,7 +208,7 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
         nextAction: ['Keep up the momentum'],
       };
 
-      // Ensure all fields are arrays
+     
       Object.keys(defaultFeedback).forEach(key => {
         if (!parsedFeedback[key] || !Array.isArray(parsedFeedback[key])) {
           parsedFeedback[key] = defaultFeedback[key];
@@ -233,7 +233,7 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in pb-16">
       
-      {/* Header */}
+    
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-br from-white via-purple-50/30 to-pink-50/20 p-6 md:p-8 rounded-3xl border border-pink-200/60 shadow-lg backdrop-blur-sm">
         <div className="flex items-start gap-4">
           <div className="p-4 bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-2xl shrink-0 shadow-md shadow-purple-200/50">
@@ -277,9 +277,8 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
         </div>
       </div>
 
-      {/* Main Content */}
+   
       {isEditingKey && !readOnly ? (
-        // API Key Setup
         <div className="bg-gradient-to-br from-white via-purple-50/20 to-pink-50/20 rounded-3xl border border-pink-200/60 shadow-xl p-10 max-w-2xl mx-auto text-center flex flex-col items-center backdrop-blur-sm">
           <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center text-purple-600 mb-6">
             <Key size={32} />
@@ -320,7 +319,6 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Generate Button */}
           <div className="flex justify-between items-center gap-4">
             <h3 className="text-lg font-semibold text-slate-700">
                 {readOnly ? 'Student AI Feedback (Read-only)' : aiFeedback ? 'Your Personalized Feedback' : 'Generate AI Feedback'}
@@ -357,14 +355,13 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
             </div>
           )}
 
-          {/* Error Display */}
+      
           {error && (
             <div className="bg-gradient-to-r from-rose-50 to-red-50/30 border border-rose-200/60 text-rose-700 p-4 rounded-xl font-medium">
               ⚠️ {error}
             </div>
           )}
 
-          {/* Loading State */}
           {isGenerating && (
             <div className="bg-white rounded-3xl border-2 border-slate-200 p-12 flex flex-col items-center justify-center">
               <div className="relative mb-6">
@@ -378,7 +375,6 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
             </div>
           )}
 
-          {/* Feedback Grid */}
           {aiFeedback && !isGenerating && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in slide-in-from-bottom-6 duration-500 fade-in">
               <FeedbackCard category="productivity" items={aiFeedback.productivity} />
@@ -392,7 +388,6 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
             </div>
           )}
 
-          {/* Empty State */}
           {!aiFeedback && !isGenerating && (
             <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-3xl border-2 border-dashed border-slate-300 p-12 text-center">
               <div className="w-24 h-24 mx-auto mb-6 bg-white rounded-full flex items-center justify-center shadow-md">

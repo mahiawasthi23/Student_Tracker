@@ -30,15 +30,15 @@ const feedbackSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Compound index for efficient queries
+
 feedbackSchema.index({ student: 1, createdAt: -1 });
 feedbackSchema.index({ mentor: 1, createdAt: -1 });
 
-// Auto-delete feedback older than 10 days
+
 feedbackSchema.index(
   { createdAt: 1 },
   {
-    expireAfterSeconds: 864000, // 10 days in seconds
+    expireAfterSeconds: 864000,
   }
 );
 

@@ -89,11 +89,9 @@ export function FeedbackCard({ category, items = [] }) {
 
   return (
     <div className={`bg-gradient-to-br ${colorClass[config.color]} p-6 rounded-2xl border-3 ${shadowColor[config.color]} hover:shadow-2xl hover:scale-105 hover:-translate-y-2 transition-all duration-300 cursor-pointer group relative overflow-hidden`}>
-      {/* Shine effect */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30 -skew-x-12 group-hover:translate-x-full transition-all duration-700 pointer-events-none rounded-2xl"></div>
 
       <div className="relative z-10">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <div className={`${iconClass[config.color]} p-3 rounded-lg shadow-md transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
             <Icon size={22} />
@@ -101,7 +99,6 @@ export function FeedbackCard({ category, items = [] }) {
           <h3 className="font-black text-slate-800 text-base group-hover:text-slate-900 transition-colors">{config.title}</h3>
         </div>
 
-        {/* Items */}
         <div className="space-y-3">
           {items.map((item, idx) => (
             <div key={idx} className="flex gap-2 group/item">

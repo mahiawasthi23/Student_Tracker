@@ -22,7 +22,6 @@ export function FeedbackPage({ onBack, mentorStudentId = '' }) {
   const isMentorViewingStudent = Boolean(mentorStudentId);
 
   useEffect(() => {
-    // Only load if authenticated
     if (!isAuthenticated) {
       setLoading(false);
       setError('Not authenticated');
@@ -53,7 +52,6 @@ export function FeedbackPage({ onBack, mentorStudentId = '' }) {
         setMentorPage(1);
         setAiPage(1);
 
-        // Mark all feedback as seen
         if (!isMentorViewingStudent) {
           for (const item of mentorData) {
             if (!item.seen) {
@@ -102,7 +100,6 @@ export function FeedbackPage({ onBack, mentorStudentId = '' }) {
       .trim();
   };
 
-  // Pagination logic
   const mentorStartIndex = (mentorPage - 1) * mentorItemsPerPage;
   const paginatedMentorFeedback = mentorFeedback.slice(mentorStartIndex, mentorStartIndex + mentorItemsPerPage);
   const totalMentorPages = Math.ceil(mentorFeedback.length / mentorItemsPerPage);

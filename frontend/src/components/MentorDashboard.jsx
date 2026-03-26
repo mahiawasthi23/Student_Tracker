@@ -212,7 +212,6 @@ export function MentorDashboard({ onViewStudent }) {
           student={feedbackModalStudent}
           onClose={() => setFeedbackModalStudent(null)}
           onSuccess={() => {
-            // Optional: Can reload students or show success message here
           }}
         />
       )}
