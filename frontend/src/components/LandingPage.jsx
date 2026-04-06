@@ -64,9 +64,6 @@ export function LandingPage({ onGetStarted }) {
               Get Started
               <ArrowRight size={16} />
             </button>
-            <button className="rounded-full border border-pink-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-pink-300 hover:shadow">
-              Try Demo
-            </button>
           </div>
         </div>
 
