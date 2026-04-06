@@ -116,10 +116,10 @@ export function FeedbackPage({ onBack, mentorStudentId = '' }) {
           <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-pink-100 to-purple-100">
             <MessageCircle size={20} className="text-pink-600" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">Mentor Feedback</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">Feedback</h1>
         </div>
         <p className="text-sm text-slate-600 ml-13">
-          Personalized feedback from your mentor to help you grow
+          Personalized feedback from your mentor or AI to help you grow
         </p>
       </div>
 

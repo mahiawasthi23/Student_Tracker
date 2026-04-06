@@ -289,10 +289,10 @@ export function DateModal({ date, dateKey, onClose, readOnly = false, goals: goa
 
           <section className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <MessageSquare size={16} className="text-indigo-500" /> End of Day Summary
+              <MessageSquare size={16} className="text-indigo-500" /> Unplanned Work
             </h3>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-              <p className="text-xs text-slate-500">Log any unplanned extra work, random learnings, or general day thoughts.</p>
+              <p className="text-xs text-slate-500">Write any extra work, learning, or tasks you did that were not planned earlier.</p>
               <Timer value={dayReflection.extra?.hours} onChange={(val) => handleExtraChange('hours', val)} disabled={isLocked} />
             </div>
             <textarea
