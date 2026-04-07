@@ -7,9 +7,6 @@ import { buildProgressStats } from '../utils/progressStats';
 import { buildAiFeedbackPrompt } from '../utils/aiPromptBuilder';
 import { FeedbackCard } from './FeedbackCard';
 
-const AI_WINDOW_START_MINUTES = 20 * 60 + 30;
-const AI_WINDOW_END_MINUTES = 24 * 60;
-
 export function AIReview({ goals: goalsOverride, reflections: reflectionsOverride, readOnly = false }) {
   const progress = useProgress();
   const goals = goalsOverride || progress.goals;
@@ -28,20 +25,14 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
   const [aiFeedback, setAiFeedback] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
-  const [tickNow, setTickNow] = useState(Date.now());
   const [latestGeneratedDateKey, setLatestGeneratedDateKey] = useState('');
 
-  const now = new Date(tickNow);
-  const todayDateKey = format(now, 'yyyy-MM-dd');
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const isWithinAiWindow = currentMinutes >= AI_WINDOW_START_MINUTES && currentMinutes < AI_WINDOW_END_MINUTES;
+  const todayDateKey = format(new Date(), 'yyyy-MM-dd');
   const hasGeneratedToday = latestGeneratedDateKey === todayDateKey;
-  const generationLocked = !isWithinAiWindow || hasGeneratedToday;
-  const lockMessage = !isWithinAiWindow
-    ? 'AI feedback can be generated only between 8:30 PM and 12:00 AM.'
-    : hasGeneratedToday
-      ? 'You have already generated AI feedback today. Please come back tomorrow after 8:30 PM.'
-      : '';
+  const generationLocked = hasGeneratedToday;
+  const lockMessage = hasGeneratedToday
+    ? 'You have already generated AI feedback today. You can generate it again tomorrow.'
+    : 'You can generate AI feedback only once per day. Please complete your full-day reflection before generating.';
 
   const stats = useMemo(
     () => buildProgressStats({ goals, reflections, filter, customRange, includeReviewTexts: true }),
@@ -52,14 +43,6 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
     setAiFeedback(null);
     setError(null);
   }, [goals, reflections, filter, customRange]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTickNow(Date.now());
-    }, 30000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -103,13 +86,16 @@ export function AIReview({ goals: goalsOverride, reflections: reflectionsOverrid
       return;
     }
 
-    if (!isWithinAiWindow) {
-      setError('AI feedback can be generated only between 8:30 PM and 12:00 AM.');
+    if (hasGeneratedToday) {
+      setError('You can generate AI feedback only once per day. Please come back tomorrow.');
       return;
     }
 
-    if (hasGeneratedToday) {
-      setError('You can generate AI feedback only once per day. Please come back tomorrow after 8:30 PM.');
+    const confirmGenerate = window.confirm(
+      'AI feedback can be generated only once per day. For the most accurate and useful guidance, please generate it after completing your full-day reflection.\n\nSelect OK to continue or Cancel to review your reflection first.'
+    );
+
+    if (!confirmGenerate) {
       return;
     }
 
