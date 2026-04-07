@@ -3,40 +3,219 @@ import { X, Plus, Edit2, Trash2, Check, Play, Square, Save, Lock, Clock, Message
 import { getDisplayDate } from '../utils/dateUtils';
 import { useProgress } from '../context/ProgressContext';
 
-const Timer = ({ value, onChange, disabled }) => {
+const TIMER_SESSION_PREFIX = 'students_tracker_timer_session_';
+const ACTIVE_TIMER_KEY = 'students_tracker_active_timer_key';
+const ACTIVE_TIMER_EVENT = 'students-tracker-active-timer-changed';
+
+const Timer = ({ value, onChange, disabled, timerKey }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [seconds, setSeconds] = useState((value || 0) * 3600);
+  const [activeTimerKey, setActiveTimerKey] = useState('');
   const intervalRef = useRef(null);
+  const runningBaseSecondsRef = useRef((value || 0) * 3600);
+  const startedAtRef = useRef(null);
+  const hasHydratedSessionRef = useRef(false);
+  const skipNextValueSyncRef = useRef(false);
+
+  const getStorageKey = () => `${TIMER_SESSION_PREFIX}${timerKey || 'default'}`;
+
+  const readActiveTimerKey = () => {
+    try {
+      return window.localStorage.getItem(ACTIVE_TIMER_KEY) || '';
+    } catch {
+      return '';
+    }
+  };
+
+  const writeActiveTimerKey = (nextValue) => {
+    try {
+      if (nextValue) {
+        window.localStorage.setItem(ACTIVE_TIMER_KEY, nextValue);
+      } else {
+        window.localStorage.removeItem(ACTIVE_TIMER_KEY);
+      }
+    } catch {
+      // Ignore storage write failures.
+    }
+    setActiveTimerKey(nextValue || '');
+    window.dispatchEvent(new Event(ACTIVE_TIMER_EVENT));
+  };
+
+  const saveTimerSession = (session) => {
+    if (!timerKey) return;
+    try {
+      window.localStorage.setItem(getStorageKey(), JSON.stringify(session));
+    } catch {
+      // Ignore storage write failures and keep timer functional in-memory.
+    }
+  };
+
+  const loadTimerSession = () => {
+    if (!timerKey) return null;
+    try {
+      const raw = window.localStorage.getItem(getStorageKey());
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  };
+
+  const computeElapsedSeconds = () => {
+    if (!startedAtRef.current) return runningBaseSecondsRef.current;
+    const diff = Math.floor((Date.now() - startedAtRef.current) / 1000);
+    return Math.max(0, runningBaseSecondsRef.current + diff);
+  };
 
   useEffect(() => {
-    if (!isRunning) setSeconds((value || 0) * 3600);
+    setActiveTimerKey(readActiveTimerKey());
+
+    const syncActiveTimer = () => {
+      setActiveTimerKey(readActiveTimerKey());
+    };
+
+    const onStorage = (event) => {
+      if (event.key === ACTIVE_TIMER_KEY) {
+        syncActiveTimer();
+      }
+    };
+
+    window.addEventListener(ACTIVE_TIMER_EVENT, syncActiveTimer);
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener(ACTIVE_TIMER_EVENT, syncActiveTimer);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    hasHydratedSessionRef.current = false;
+    const session = loadTimerSession();
+
+    if (!session) {
+      setIsRunning(false);
+      setSeconds((value || 0) * 3600);
+      runningBaseSecondsRef.current = (value || 0) * 3600;
+      startedAtRef.current = null;
+      hasHydratedSessionRef.current = true;
+      return;
+    }
+
+    runningBaseSecondsRef.current = Number(session.baseSeconds || 0);
+    startedAtRef.current = session.isRunning ? Number(session.startedAt || Date.now()) : null;
+    skipNextValueSyncRef.current = true;
+    const currentlyActive = readActiveTimerKey();
+
+    if (session.isRunning && (!currentlyActive || currentlyActive === timerKey)) {
+      if (!currentlyActive) {
+        writeActiveTimerKey(timerKey || '');
+      }
+      setIsRunning(true);
+      setSeconds(computeElapsedSeconds());
+    } else {
+      setIsRunning(false);
+      setSeconds(runningBaseSecondsRef.current);
+      saveTimerSession({ isRunning: false, baseSeconds: runningBaseSecondsRef.current, startedAt: null });
+    }
+
+    hasHydratedSessionRef.current = true;
+  }, [timerKey]);
+
+  useEffect(() => {
+    if (!hasHydratedSessionRef.current) return;
+    if (skipNextValueSyncRef.current) {
+      skipNextValueSyncRef.current = false;
+      return;
+    }
+
+    if (!isRunning) {
+      const nextSeconds = (value || 0) * 3600;
+      setSeconds(nextSeconds);
+      runningBaseSecondsRef.current = nextSeconds;
+      startedAtRef.current = null;
+      saveTimerSession({ isRunning: false, baseSeconds: nextSeconds, startedAt: null });
+    }
   }, [value, isRunning]);
 
   const toggleTimer = () => {
     if (disabled) return;
-    if (isRunning) {
-      clearInterval(intervalRef.current);
-      onChange(parseFloat((seconds / 3600).toFixed(2)));
-    } else {
-      intervalRef.current = setInterval(() => setSeconds((prev) => prev + 1), 1000);
+    const currentlyActive = readActiveTimerKey();
+    const hasOtherRunningTimer = Boolean(currentlyActive && currentlyActive !== timerKey);
+
+    if (!isRunning && hasOtherRunningTimer) {
+      window.alert('Only one timer can run at a time. Please stop the currently running timer first.');
+      return;
     }
-    setIsRunning(!isRunning);
+
+    if (isRunning) {
+      const finalSeconds = computeElapsedSeconds();
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setSeconds(finalSeconds);
+      runningBaseSecondsRef.current = finalSeconds;
+      startedAtRef.current = null;
+      saveTimerSession({ isRunning: false, baseSeconds: finalSeconds, startedAt: null });
+      if (readActiveTimerKey() === timerKey) {
+        writeActiveTimerKey('');
+      }
+      onChange(parseFloat((finalSeconds / 3600).toFixed(2)));
+      setIsRunning(false);
+    } else {
+      runningBaseSecondsRef.current = seconds;
+      startedAtRef.current = Date.now();
+      saveTimerSession({
+        isRunning: true,
+        baseSeconds: runningBaseSecondsRef.current,
+        startedAt: startedAtRef.current,
+      });
+      writeActiveTimerKey(timerKey || '');
+      intervalRef.current = setInterval(() => {
+        setSeconds(computeElapsedSeconds());
+      }, 1000);
+      setIsRunning(true);
+    }
   };
 
-  useEffect(() => () => clearInterval(intervalRef.current), []);
+  useEffect(() => {
+    if (!isRunning) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      return;
+    }
+
+    intervalRef.current = setInterval(() => {
+      setSeconds(computeElapsedSeconds());
+    }, 1000);
+
+    return () => {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    };
+  }, [isRunning]);
+
+  useEffect(() => () => {
+    clearInterval(intervalRef.current);
+    intervalRef.current = null;
+  }, []);
 
   const hrs = Math.floor(seconds / 3600);
   const mims = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
   const displayTime = `${hrs.toString().padStart(2, '0')}:${mims.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const isOtherTimerRunning = Boolean(activeTimerKey && activeTimerKey !== timerKey);
+  const canStartThisTimer = !disabled && !isOtherTimerRunning;
 
   return (
     <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
       {!disabled && (
         <button
           onClick={toggleTimer}
-          className={`p-1.5 rounded-md flex items-center justify-center transition-colors relative ${isRunning ? 'bg-red-50 text-red-600 hover:bg-red-100 ring-1 ring-red-200' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
-          title={isRunning ? "Stop" : "Start"}
+          disabled={!isRunning && !canStartThisTimer}
+          className={`p-1.5 rounded-md flex items-center justify-center transition-colors relative ${isRunning ? 'bg-red-50 text-red-600 hover:bg-red-100 ring-1 ring-red-200' : canStartThisTimer ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+          title={isRunning ? "Stop timer and save hours" : isOtherTimerRunning ? "Another timer is running" : "Start study timer"}
         >
           {isRunning && (
             <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
@@ -53,9 +232,13 @@ const Timer = ({ value, onChange, disabled }) => {
         onChange={(e) => {
           const val = parseFloat(e.target.value) || 0;
           onChange(val);
-          setSeconds(val * 3600);
+          const nextSeconds = val * 3600;
+          setSeconds(nextSeconds);
+          runningBaseSecondsRef.current = nextSeconds;
+          startedAtRef.current = null;
+          saveTimerSession({ isRunning: false, baseSeconds: nextSeconds, startedAt: null });
         }}
-        placeholder="Hrs"
+        placeholder="Hours"
         className={`w-16 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 ${disabled ? 'bg-slate-50/50 text-slate-500 border-slate-100 cursor-not-allowed' : 'bg-white border-slate-200'}`}
         disabled={isRunning || disabled}
       />
@@ -150,6 +333,7 @@ const GoalItem = ({ goal, dateKey, updateGoal, deleteGoal, dayReflection, update
           <Timer 
             value={goalReflection.hours} 
             onChange={(val) => handleReflectionChange('hours', val)} 
+            timerKey={`${dateKey}-goal-${goal.id}`}
             disabled={isSubmitted}
           />
         </div>
@@ -232,6 +416,15 @@ export function DateModal({ date, dateKey, onClose, readOnly = false, goals: goa
               </span>
             </div>
 
+            <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-2.5 text-xs text-indigo-800">
+              <p className="font-semibold flex items-center gap-1.5">
+                <Clock size={13} /> Set Hours with reflections for Better Feedback.
+              </p>
+              <p className="mt-1 leading-relaxed">
+                Hours help AI and mentors understand your actual effort. You can use the timer (Start -&gt; Stop) or enter hours manually.
+              </p>
+            </div>
+
             {!isLocked && (
               <div className="flex gap-2 mb-6 shadow-sm">
                 <input
@@ -293,7 +486,7 @@ export function DateModal({ date, dateKey, onClose, readOnly = false, goals: goa
             </h3>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <p className="text-xs text-slate-500">Write any extra work, learning, or tasks you did that were not planned earlier.</p>
-              <Timer value={dayReflection.extra?.hours} onChange={(val) => handleExtraChange('hours', val)} disabled={isLocked} />
+              <Timer value={dayReflection.extra?.hours} onChange={(val) => handleExtraChange('hours', val)} timerKey={`${dateKey}-extra`} disabled={isLocked} />
             </div>
             <textarea
               value={dayReflection.extra?.text || ''}
